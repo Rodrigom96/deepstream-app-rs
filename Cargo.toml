@@ -1,0 +1,14 @@
+[package]
+name = "deepstream-rs"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+glib = "0.14.2"
+gst = { version = "0.17.2", package = "gstreamer" }
+anyhow = "1.0"
+derive_more = "0.99.5"
+
+[[bin]]
+name = "deepstream-rs"
+path = "src/main.rs"
