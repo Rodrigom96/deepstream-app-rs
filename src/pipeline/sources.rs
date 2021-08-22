@@ -7,22 +7,6 @@ use common::MissingElement;
 
 
 fn add_bin_ghostpad(bin: &gst::Bin, name: &str, pad: &gst::Pad) -> Result<(), Error> {
-    //use glib::translate::*;
-    //use gstreamer_sys::GstBin;
-    //use gstreamer_sys::GstElement;
-    //use gstreamer_sys::gst_ghost_pad_new;
-    //use gstreamer_sys::gst_pad_set_active;
-    //use gstreamer_sys::gst_element_add_pad;
-    /*
-        unsafe {
-            let bin_mut :*mut GstBin = bin.to_glib_none().0;
-
-            let ghost_pad_mut = gst_ghost_pad_new("sink".as_ptr() as *const i8, pad.to_glib_none().0);
-            gst_pad_set_active (ghost_pad_mut, 1);
-            gst_element_add_pad(&mut (*bin_mut).element, ghost_pad_mut);
-            //(*bin_mut).element.add_pad(&ghost_pad_mut);
-        }
-    */
     let ghost_pad = gst::GhostPad::with_target(Some(name), pad).unwrap();
     bin.add_pad(&ghost_pad)?;
 
