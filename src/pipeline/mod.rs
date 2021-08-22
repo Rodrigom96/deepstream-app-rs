@@ -1,25 +1,16 @@
 use gst::prelude::*;
 
 use anyhow::Error;
-use derive_more::{Display, Error};
 
-#[derive(Debug, Display, Error)]
-#[display(fmt = "Missing element {}", _0)]
-struct MissingElement(#[error(not(source))] &'static str);
+mod common;
+use common::MissingElement;
+use common::ErrorMessage;
 
-#[derive(Debug, Display, Error)]
-#[display(fmt = "Received error from {}: {} (debug: {:?})", src, error, debug)]
-struct ErrorMessage {
-    src: String,
-    error: String,
-    debug: Option<String>,
-    source: glib::error::Error,
-}
+pub mod sources;
 
 pub struct Pipeline {
     pipeline: gst::Pipeline,
-    //src: gst::Element,
-    //sink: gst::Element,
+    sink: gst::Element,
 }
 
 impl Pipeline {
@@ -27,8 +18,6 @@ impl Pipeline {
         gst::init()?;
 
         let pipeline = gst::Pipeline::new(None);
-        let src = gst::ElementFactory::make("videotestsrc", None)
-            .map_err(|_| MissingElement("videotestsrc"))?;
 
         let sink;
         if display {
@@ -37,12 +26,19 @@ impl Pipeline {
             sink = gst::ElementFactory::make("fakesink", None).map_err(|_| MissingElement("fakesink"))?;
         }
 
-        pipeline.add_many(&[&src, &sink])?;
-        src.link(&sink)?;
+        pipeline.add_many(&[&sink])?;
 
         Ok(Pipeline{
-            pipeline
+            pipeline,
+            sink
         })
+    }
+
+    pub fn add_source(&self, src: &dyn sources::Source) -> Result<(), Error> {
+        self.pipeline.add_many(&[src.get_bin()])?;
+        src.link(&self.sink)?;
+
+        Ok(())
     }
 
     pub fn run(&self) -> Result<(), Error> {

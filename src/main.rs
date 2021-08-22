@@ -3,23 +3,39 @@ use std::process;
 mod lib;
 use lib::*;
 
-#[path = "pipeline/pipeline.rs"]
-mod pipe;
-
+mod pipeline;
 
 fn main() {
     let config = Config::new();
 
-    let pipeline;
-    match pipe::Pipeline::new(config.display) {
-        Ok(r) => pipeline = r,
+    let pipe;
+    match pipeline::Pipeline::new(config.display) {
+        Ok(r) => pipe = r,
         Err(e) => {
             eprintln!("Error! {}", e);
             process::exit(1);
         } 
     }
 
-    match pipeline.run() {
+    let uri = String::from("rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov");
+    let src;
+    match pipeline::sources::URISource::new(uri) {
+        Ok(v) => src = v,
+        Err(e) => {
+            eprintln!("Error! {}", e);
+            process::exit(1);
+        } 
+    }
+    
+    match pipe.add_source(&src) {
+        Ok(_) => println!("Source added"),
+        Err(e) => {
+            eprintln!("Error! {}", e);
+            process::exit(1);
+        } 
+    }
+
+    match pipe.run() {
         Ok(r) => r,
         Err(e) => eprintln!("Error! {}", e),
     }

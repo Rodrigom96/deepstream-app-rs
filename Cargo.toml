@@ -6,6 +6,7 @@ edition = "2018"
 [dependencies]
 glib = "0.14.2"
 gst = { version = "0.17.2", package = "gstreamer" }
+gstreamer-sys = "0.17.0"
 anyhow = "1.0"
 derive_more = "0.99.5"
 
