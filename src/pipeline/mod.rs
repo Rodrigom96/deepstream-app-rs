@@ -21,7 +21,7 @@ impl Pipeline {
 
         let sink;
         if display {
-            sink = gst::ElementFactory::make("autovideosink", None).map_err(|_| MissingElement("autovideosink"))?;
+            sink = gst::ElementFactory::make("nveglglessink", None).map_err(|_| MissingElement("nveglglessink"))?;
         } else {
             sink = gst::ElementFactory::make("fakesink", None).map_err(|_| MissingElement("fakesink"))?;
         }

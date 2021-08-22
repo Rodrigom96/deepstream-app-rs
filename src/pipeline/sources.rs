@@ -82,15 +82,20 @@ impl URISource {
             .map_err(|_| MissingElement("uridecodebin"))?;
         let queue = gst::ElementFactory::make("queue", None)
             .map_err(|_| MissingElement("queue"))?;
+        let nvconvert = gst::ElementFactory::make("nvvideoconvert", None)
+            .map_err(|_| MissingElement("nvvideoconvert"))?;
         
         // Config urisourcebin
         urisrc.set_property("uri", &uri.to_string())?;
 
         // Add elements to queue
-        bin.add_many(&[&urisrc, &queue])?;
+        bin.add_many(&[&urisrc, &queue, &nvconvert])?;
+
+        // Link elements
+        queue.link(&nvconvert)?;
 
         // Add bin sink ghostpad
-        let pad = queue.static_pad("src").expect("queue has no srcpad");
+        let pad = nvconvert.static_pad("src").expect("nvvideoconvert has no srcpad");
         add_bin_ghostpad(&bin, "sink", &pad)?;
 
         // Connect the pad-added signal
