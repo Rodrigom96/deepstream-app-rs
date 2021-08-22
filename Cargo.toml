@@ -8,6 +8,8 @@ glib = "0.14.2"
 gst = { version = "0.17.2", package = "gstreamer" }
 anyhow = "1.0"
 derive_more = "0.99.5"
+env_logger = "0.9"
+log = "0.4"
 
 [[bin]]
 name = "deepstream-rs"

@@ -1,5 +1,6 @@
 use gst::prelude::*;
 use anyhow::Error;
+use log::{debug, info, warn, error};
 
 #[path = "./common.rs"]
 mod common;
@@ -80,7 +81,7 @@ impl URISource {
         // Connect the pad-added signal
         let queue_weak = queue.downgrade();
         urisrc.connect_pad_added(move |src, src_pad| {
-            println!("Received new pad {} from {}", src_pad.name(), src.name());
+            debug!("Received new pad {} from {}", src_pad.name(), src.name());
             
             let queue = match queue_weak.upgrade() {
                 Some(queue) => queue,
@@ -91,7 +92,7 @@ impl URISource {
                 .static_pad("sink")
                 .expect("Failed to get static sink pad from convert");
             if sink_pad.is_linked() {
-                println!("We are already linked. Ignoring.");
+                warn!("We are already linked. Ignoring.");
                 return;
             }
             let new_pad_caps = match src_pad.current_caps() {
@@ -103,11 +104,11 @@ impl URISource {
                 .expect("Failed to get first structure of caps.");
             let new_pad_type = new_pad_struct.name();
     
-            println!("Received pad type {}", new_pad_type);
+            debug!("Received pad type {}", new_pad_type);
             
             let is_video = new_pad_type.starts_with("video/x-raw");
             if !is_video {
-                println!(
+                debug!(
                     "It has type {} which is not video. Ignoring.",
                     new_pad_type
                 );
@@ -124,9 +125,9 @@ impl URISource {
 
             let res = src_pad.link(&sink_pad);
             if res.is_err() {
-                println!("Type is {} but link failed.", new_pad_type);
+                error!("Type is {} but link failed.", new_pad_type);
             } else {
-                println!("Link succeeded (type {}).", new_pad_type);
+                info!("Link succeeded (type {}).", new_pad_type);
             }
         });
     

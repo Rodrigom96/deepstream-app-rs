@@ -1,19 +1,18 @@
-use std::process;
-
 mod lib;
-use lib::*;
-
+mod logging;
 mod pipeline;
 
 fn main() {
-    let config = Config::new();
+    // Init logging
+    logging::init();
+
+    let config = lib::Config::new();
 
     let pipe;
     match pipeline::Pipeline::new(config.display) {
         Ok(r) => pipe = r,
         Err(e) => {
-            eprintln!("Error! {}", e);
-            process::exit(1);
+            panic!("Error! {}", e);
         }
     }
 
@@ -23,16 +22,14 @@ fn main() {
         match pipeline::sources::URISource::new(uri) {
             Ok(v) => src = v,
             Err(e) => {
-                eprintln!("Error! {}", e);
-                process::exit(1);
+                panic!("Error! {}", e);
             }
         }
 
         match pipe.add_source(&src, i) {
             Ok(_) => println!("Source added"),
             Err(e) => {
-                eprintln!("Error! {}", e);
-                process::exit(1);
+                panic!("Error! {}", e);
             }
         }
     }
@@ -41,6 +38,4 @@ fn main() {
         Ok(r) => r,
         Err(e) => eprintln!("Error! {}", e),
     }
-
-    println!("Rust says: Hello, world!");
 }
