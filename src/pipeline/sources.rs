@@ -24,7 +24,7 @@ pub trait Source {
 
 impl TestSource {
     pub fn new() -> Result<Self, Error> {
-        let bin = gst::Bin::new(Some("testsrcbin"));
+        let bin = gst::Bin::new(None);
 
         let src = gst::ElementFactory::make("videotestsrc", None)
             .map_err(|_| MissingElement("videotestsrc"))?;
@@ -60,27 +60,22 @@ pub struct URISource {
 
 impl URISource {
     pub fn new(uri: String) -> Result<Self, Error> {
-        let bin = gst::Bin::new(Some("urisourcebin"));
+        let bin = gst::Bin::new(None);
 
         let urisrc = gst::ElementFactory::make("uridecodebin", None)
             .map_err(|_| MissingElement("uridecodebin"))?;
         let queue = gst::ElementFactory::make("queue", None)
             .map_err(|_| MissingElement("queue"))?;
-        let nvconvert = gst::ElementFactory::make("nvvideoconvert", None)
-            .map_err(|_| MissingElement("nvvideoconvert"))?;
         
         // Config urisourcebin
         urisrc.set_property("uri", &uri.to_string())?;
 
         // Add elements to queue
-        bin.add_many(&[&urisrc, &queue, &nvconvert])?;
-
-        // Link elements
-        queue.link(&nvconvert)?;
+        bin.add_many(&[&urisrc, &queue])?;
 
         // Add bin sink ghostpad
-        let pad = nvconvert.static_pad("src").expect("nvvideoconvert has no srcpad");
-        add_bin_ghostpad(&bin, "sink", &pad)?;
+        let pad = queue.static_pad("src").expect("queue has no srcpad");
+        add_bin_ghostpad(&bin, "src", &pad)?;
 
         // Connect the pad-added signal
         let queue_weak = queue.downgrade();
@@ -117,6 +112,14 @@ impl URISource {
                     new_pad_type
                 );
                 return;
+            }
+
+            let features = new_pad_caps.features(0).unwrap();
+            if !features.contains("memory:NVMM") {
+                panic!(
+                    "Feature {} not contain 'memory:NVMM'.",
+                    features
+                );
             }
 
             let res = src_pad.link(&sink_pad);
