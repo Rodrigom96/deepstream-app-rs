@@ -92,11 +92,11 @@ fn create_streamux() -> Result<gst::Element, Error> {
         .map_err(|_| MissingElement("nvstreammux"))?;
 
     // Set propertys
-    streammux.set_property("batch-size", 1 as u32)?;
+    streammux.set_property("batch-size", 1_u32)?;
     streammux.set_property("enable-padding", true)?;
     streammux.set_property("live-source", true)?;
-    streammux.set_property("width", 1280 as u32)?;
-    streammux.set_property("height", 720 as u32)?;
+    streammux.set_property("width", 1280_u32)?;
+    streammux.set_property("height", 720_u32)?;
 
     Ok(streammux)
 }

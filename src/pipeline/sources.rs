@@ -1,6 +1,6 @@
-use gst::prelude::*;
 use anyhow::Error;
-use log::{debug, info, warn, error};
+use gst::prelude::*;
+use log::{debug, error, info, warn};
 
 use super::common;
 use super::common::MissingElement;
@@ -15,6 +15,7 @@ pub trait Source {
 }
 
 impl TestSource {
+    #[allow(dead_code)]
     pub fn new() -> Result<Self, Error> {
         let bin = gst::Bin::new(None);
 
@@ -22,11 +23,9 @@ impl TestSource {
             .map_err(|_| MissingElement("videotestsrc"))?;
 
         bin.add_many(&[&src])?;
-        common::add_bin_ghost_pad_named(&bin, &src, "src","sink")?;
-    
-        Ok(TestSource{
-            bin
-        })
+        common::add_bin_ghost_pad_named(&bin, &src, "src", "sink")?;
+
+        Ok(TestSource { bin })
     }
 }
 
@@ -52,11 +51,10 @@ impl URISource {
 
         let urisrc = gst::ElementFactory::make("uridecodebin", None)
             .map_err(|_| MissingElement("uridecodebin"))?;
-        let queue = gst::ElementFactory::make("queue", None)
-            .map_err(|_| MissingElement("queue"))?;
-        
+        let queue =
+            gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
         // Config urisourcebin
-        urisrc.set_property("uri", &uri.to_string())?;
+        urisrc.set_property("uri", &uri)?;
 
         // Add elements to queue
         bin.add_many(&[&urisrc, &queue])?;
@@ -68,7 +66,6 @@ impl URISource {
         let queue_weak = queue.downgrade();
         urisrc.connect_pad_added(move |src, src_pad| {
             debug!("Received new pad {} from {}", src_pad.name(), src.name());
-            
             let queue = match queue_weak.upgrade() {
                 Some(queue) => queue,
                 None => return,
@@ -89,24 +86,16 @@ impl URISource {
                 .structure(0)
                 .expect("Failed to get first structure of caps.");
             let new_pad_type = new_pad_struct.name();
-    
             debug!("Received pad type {}", new_pad_type);
-            
             let is_video = new_pad_type.starts_with("video/x-raw");
             if !is_video {
-                debug!(
-                    "It has type {} which is not video. Ignoring.",
-                    new_pad_type
-                );
+                debug!("It has type {} which is not video. Ignoring.", new_pad_type);
                 return;
             }
 
             let features = new_pad_caps.features(0).unwrap();
             if !features.contains("memory:NVMM") {
-                panic!(
-                    "Feature {} not contain 'memory:NVMM'.",
-                    features
-                );
+                panic!("Feature {} not contain 'memory:NVMM'.", features);
             }
 
             let res = src_pad.link(&sink_pad);
@@ -116,10 +105,8 @@ impl URISource {
                 info!("Link succeeded (type {}).", new_pad_type);
             }
         });
-    
-        Ok(URISource{
-            bin
-        })
+
+        Ok(URISource { bin })
     }
 }
 

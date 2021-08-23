@@ -6,10 +6,14 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Config {
-        let display =  !env::var("DISPLAY").is_err();
+        let display = env::var("DISPLAY").is_ok();
 
-        Config {
-            display,
-        }
+        Config { display }
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -1,4 +1,3 @@
-use env_logger;
 use env_logger::Env;
 
 pub fn init() {

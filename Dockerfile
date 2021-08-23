@@ -29,6 +29,9 @@ RUN sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 # Copy source code
 COPY ./src ./src
 
+# Check code with clippy
+RUN cargo clippy -- -D warnings
+
 # Build for release
 RUN cargo install --path .
 
