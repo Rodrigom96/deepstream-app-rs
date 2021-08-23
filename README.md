@@ -24,3 +24,4 @@ sh run.sh
 ## References
 - https://gitlab.freedesktop.org/gstreamer/gstreamer-rs/-/tree/master/examples
 - https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
+- https://github.com/mdegans/deepstream-5.1
