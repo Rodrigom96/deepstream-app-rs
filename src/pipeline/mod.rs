@@ -5,6 +5,7 @@ use anyhow::Error;
 mod common;
 use common::{ErrorMessage, MissingElement};
 
+mod sinks;
 pub mod sources;
 
 pub struct Pipeline {
@@ -20,17 +21,13 @@ impl Pipeline {
 
         let streammux = create_streamux().expect("Cant create steamux");
 
-        let sink;
-        if display {
-            sink = add_display_sink(&pipeline).unwrap();
-        } else {
-            sink = gst::ElementFactory::make("fakesink", None)
-                .map_err(|_| MissingElement("fakesink"))?;
-            pipeline.add(&sink)?;
-        }
+        let sink = sinks::create_sink_bin(display).expect("Cant create sink_bin");
+        pipeline.add(&sink)?;
 
         pipeline.add_many(&[&streammux])?;
-        streammux.link(&sink)?;
+        streammux
+            .link(&sink)
+            .expect("Failed to link streamux with sink");
 
         Ok(Pipeline {
             pipeline,
@@ -89,11 +86,12 @@ impl Pipeline {
     }
 }
 
+/// Create nvstreammux element and config it.
 fn create_streamux() -> Result<gst::Element, Error> {
     let streammux = gst::ElementFactory::make("nvstreammux", None)
         .map_err(|_| MissingElement("nvstreammux"))?;
 
-    // Set propiertys
+    // Set propertys
     streammux.set_property("batch-size", 1 as u32)?;
     streammux.set_property("enable-padding", true)?;
     streammux.set_property("live-source", true)?;
@@ -101,20 +99,4 @@ fn create_streamux() -> Result<gst::Element, Error> {
     streammux.set_property("height", 720 as u32)?;
 
     Ok(streammux)
-}
-
-fn add_display_sink(pipeline: &gst::Pipeline) -> Result<gst::Element, Error> {
-    let nvvidconv = gst::ElementFactory::make("nvvideoconvert", None)
-        .map_err(|_| MissingElement("nvvideoconvert"))?;
-    let tiler = gst::ElementFactory::make("nvmultistreamtiler", None)
-        .map_err(|_| MissingElement("nvmultistreamtiler"))?;
-    let sink = gst::ElementFactory::make("nveglglessink", None)
-        .map_err(|_| MissingElement("nveglglessink"))?;
-
-    pipeline.add_many(&[&nvvidconv, &tiler, &sink])?;
-
-    nvvidconv.link(&tiler)?;
-    tiler.link(&sink)?;
-
-    Ok(nvvidconv)
 }

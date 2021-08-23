@@ -2,17 +2,8 @@ use gst::prelude::*;
 use anyhow::Error;
 use log::{debug, info, warn, error};
 
-#[path = "./common.rs"]
-mod common;
-use common::MissingElement;
-
-
-fn add_bin_ghostpad(bin: &gst::Bin, name: &str, pad: &gst::Pad) -> Result<(), Error> {
-    let ghost_pad = gst::GhostPad::with_target(Some(name), pad).unwrap();
-    bin.add_pad(&ghost_pad)?;
-
-    Ok(())
-}
+use super::common;
+use super::common::MissingElement;
 
 pub struct TestSource {
     pub bin: gst::Bin,
@@ -31,11 +22,7 @@ impl TestSource {
             .map_err(|_| MissingElement("videotestsrc"))?;
 
         bin.add_many(&[&src])?;
-
-        let pad = src.static_pad("src").expect("videotestsrc has no srcpad");
-        add_bin_ghostpad(&bin, "sink", &pad)?;
-        
-        drop(pad);
+        common::add_bin_ghost_pad_named(&bin, &src, "src","sink")?;
     
         Ok(TestSource{
             bin
@@ -75,8 +62,7 @@ impl URISource {
         bin.add_many(&[&urisrc, &queue])?;
 
         // Add bin sink ghostpad
-        let pad = queue.static_pad("src").expect("queue has no srcpad");
-        add_bin_ghostpad(&bin, "src", &pad)?;
+        common::add_bin_ghost_pad(&bin, &queue, "src")?;
 
         // Connect the pad-added signal
         let queue_weak = queue.downgrade();
