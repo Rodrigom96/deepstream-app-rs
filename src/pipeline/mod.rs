@@ -5,9 +5,10 @@ use anyhow::Error;
 mod common;
 use common::{ErrorMessage, MissingElement};
 
+pub mod config;
+mod filters;
 mod sinks;
 pub mod sources;
-pub mod config;
 
 pub struct Pipeline {
     pipeline: gst::Pipeline,
@@ -15,20 +16,27 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(display: bool) -> Result<Self, Error> {
+    pub fn new(display: bool, filters_config: Vec<config::FilterConfig>) -> Result<Self, Error> {
         gst::init()?;
 
         let pipeline = gst::Pipeline::new(None);
 
+        // create elementes
         let streammux = create_streamux().expect("Cant create steamux");
-
+        let filters_bin = filters::create_bin(filters_config)?;
         let sink = sinks::create_sink_bin(display).expect("Cant create sink_bin");
+        // add elements
+        pipeline.add_many(&[&streammux])?;
+        pipeline.add(&filters_bin)?;
         pipeline.add(&sink)?;
 
-        pipeline.add_many(&[&streammux])?;
+        // link elements
         streammux
+            .link(&filters_bin)
+            .expect("Failed to link streamux with filters_bin");
+        filters_bin
             .link(&sink)
-            .expect("Failed to link streamux with sink");
+            .expect("Failed to link streamux with filters_bin");
 
         Ok(Pipeline {
             pipeline,

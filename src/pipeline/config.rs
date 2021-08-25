@@ -13,8 +13,14 @@ pub struct SourceConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub enum FilterConfig {
+    NvInfer { config_path: String },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PipelineConfig {
     pub sources: Vec<SourceConfig>,
+    pub filters: Vec<FilterConfig>,
 }
 
 impl PipelineConfig {

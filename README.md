@@ -9,7 +9,7 @@
 ### Build container
 To build docker image
 ```sh
-sh build.sh
+make build
 ```
 ### Run container
 Allow external applications to connect to the host's X display
@@ -18,7 +18,7 @@ xhost +
 ```
 Run docker container
 ```
-sh run.sh
+make run
 ```
 
 ## References

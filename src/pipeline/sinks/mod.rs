@@ -11,7 +11,6 @@ pub fn create_sink_bin(display: bool) -> Result<gst::Bin, Error> {
 
     let queue = gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
     let tee = gst::ElementFactory::make("tee", None).map_err(|_| MissingElement("tee"))?;
-    
     bin.add_many(&[&queue, &tee])?;
     queue.link(&tee)?;
 
@@ -19,12 +18,16 @@ pub fn create_sink_bin(display: bool) -> Result<gst::Bin, Error> {
         // Add filter to proccess images for display
         let nvvidconv = gst::ElementFactory::make("nvvideoconvert", None)
             .map_err(|_| MissingElement("nvvideoconvert"))?;
+        let nvosd =
+            gst::ElementFactory::make("nvdsosd", None).map_err(|_| MissingElement("nvdsosd"))?;
         let tiler = gst::ElementFactory::make("nvmultistreamtiler", None)
             .map_err(|_| MissingElement("nvmultistreamtiler"))?;
-        let tee_display = gst::ElementFactory::make("tee", None).map_err(|_| MissingElement("tee"))?;
-        bin.add_many(&[&nvvidconv, &tiler, &tee_display])?;
+        let tee_display =
+            gst::ElementFactory::make("tee", None).map_err(|_| MissingElement("tee"))?;
+        bin.add_many(&[&nvvidconv, &nvosd, &tiler, &tee_display])?;
         common::link_element_to_tee_src_pad(&tee, &nvvidconv)?;
-        nvvidconv.link(&tiler)?;
+        nvvidconv.link(&nvosd)?;
+        nvosd.link(&tiler)?;
         tiler.link(&tee_display)?;
 
         // Add sinks

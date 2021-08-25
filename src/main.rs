@@ -17,7 +17,7 @@ fn main() {
         };
 
     let pipe;
-    match pipeline::Pipeline::new(config.display) {
+    match pipeline::Pipeline::new(config.display, pipeline_config.filters) {
         Ok(r) => pipe = r,
         Err(e) => {
             panic!("Error! {}", e);
