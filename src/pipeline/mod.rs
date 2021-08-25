@@ -7,6 +7,7 @@ use common::{ErrorMessage, MissingElement};
 
 mod sinks;
 pub mod sources;
+pub mod config;
 
 pub struct Pipeline {
     pipeline: gst::Pipeline,
