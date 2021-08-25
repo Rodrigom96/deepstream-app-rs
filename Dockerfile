@@ -22,9 +22,9 @@ COPY dummy.rs .
 COPY Cargo.toml .
 
 # Build only the dependencies to cache them
-RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml
-RUN cargo build --release
-RUN sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
+RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
+    cargo build --release &&\
+    sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 
 # Copy source code
 COPY ./src ./src
@@ -34,5 +34,8 @@ RUN cargo clippy -- -D warnings
 
 # Build for release
 RUN cargo install --path .
+
+# Copy configurations
+COPY ./config ./config
 
 CMD ["deepstream-rs"]

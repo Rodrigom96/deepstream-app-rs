@@ -15,7 +15,6 @@ pub trait Source {
 }
 
 impl TestSource {
-    #[allow(dead_code)]
     pub fn new() -> Result<Self, Error> {
         let bin = gst::Bin::new(None);
 
@@ -23,7 +22,7 @@ impl TestSource {
             .map_err(|_| MissingElement("videotestsrc"))?;
 
         bin.add_many(&[&src])?;
-        common::add_bin_ghost_pad_named(&bin, &src, "src", "sink")?;
+        common::add_bin_ghost_pad(&bin, &src, "src")?;
 
         Ok(TestSource { bin })
     }
