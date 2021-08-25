@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/deepstream:5.1-21.02-base as base
+FROM nvcr.io/nvidia/deepstream:5.1-21.02-samples as base
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
