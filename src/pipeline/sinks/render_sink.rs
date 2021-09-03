@@ -8,11 +8,14 @@ use common::MissingElement;
 pub fn create_bin(name: Option<&str>) -> Result<gst::Bin, Error> {
     let bin = gst::Bin::new(name);
 
+    let queue = gst::ElementFactory::make("queue", None)
+    .map_err(|_| MissingElement("queue"))?;
     let sink = gst::ElementFactory::make("nveglglessink", None)
         .map_err(|_| MissingElement("nveglglessink"))?;
 
-    bin.add(&sink)?;
-    common::add_bin_ghost_pad(&bin, &sink, "sink")?;
+    bin.add_many(&[&queue,&sink])?;
+    common::add_bin_ghost_pad(&bin, &queue, "sink")?;
+    queue.link(&sink)?;
 
     Ok(bin)
 }

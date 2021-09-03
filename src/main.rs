@@ -1,4 +1,3 @@
-mod lib;
 mod logging;
 mod pipeline;
 
@@ -8,8 +7,6 @@ mod test;
 fn main() {
     // Init logging
     logging::init();
-
-    let config = lib::Config::new();
     let pipeline_config =
         match pipeline::config::PipelineConfig::from_file("config/pipeline_config.yml") {
             Ok(pipeline_config) => pipeline_config,
@@ -17,7 +14,7 @@ fn main() {
         };
 
     let pipe;
-    match pipeline::Pipeline::new(config.display, pipeline_config.filters) {
+    match pipeline::Pipeline::new(pipeline_config.filters, pipeline_config.sinks) {
         Ok(r) => pipe = r,
         Err(e) => {
             panic!("Error! {}", e);

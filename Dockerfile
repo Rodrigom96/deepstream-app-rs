@@ -2,6 +2,7 @@ FROM nvcr.io/nvidia/deepstream:5.1-21.02-samples as base
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
+    # rust
     build-essential \
     curl \
     # gstreamer-rs dependencies
@@ -14,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-FROM base
+FROM base as build
 WORKDIR /usr/src/deepstream-rs
 
 # Copy our manifests
@@ -35,7 +36,12 @@ RUN cargo clippy -- -D warnings
 # Build for release
 RUN cargo install --path .
 
+FROM base
+WORKDIR /usr/src/deepstream-rs
+
+COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
+
 # Copy configurations
 COPY ./config ./config
 
-CMD ["deepstream-rs"]
+CMD ["./deepstream-rs"]

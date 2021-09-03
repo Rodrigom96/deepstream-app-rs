@@ -1,0 +1,39 @@
+version: "3"
+
+services: 
+    app:
+        image: deepstream-rs
+        environment: 
+            - DISPLAY=$DISPLAY
+            - MY_LOG_LEVEL=debug
+            - MY_LOG_STYLE=always
+            - GST_DEBUG=1
+        volumes: 
+            - /tmp/.X11-unix/:/tmp/.X11-unix:ro
+        depends_on: 
+            - kafka
+
+    zookeeper:
+        image: wurstmeister/zookeeper
+        restart: always
+        expose: 
+            - "2181"
+
+    kafka:
+        image: wurstmeister/kafka
+        restart: always
+        command: start-kafka.sh
+        environment:
+            - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+            - ALLOW_PLAINTEXT_LISTENER=yes
+            - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+            - KAFKA_LISTENERS=PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+            - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+            - KAFKA_LOG_RETENTION_HOURS=1
+        expose:
+            - "9092"
+            - "29092"
+        ports:
+            - 29092:29092
+        depends_on:
+            - zookeeper
