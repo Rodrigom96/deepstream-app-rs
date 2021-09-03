@@ -19,7 +19,6 @@ pub enum FilterConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MsgBrokerSinkConfig {
-    pub lib: String,
     pub topic: String,
     pub server: String,
     pub port: u32,

@@ -26,12 +26,6 @@ pub fn create_bin(name: Option<&str>, config: MsgBrokerSinkConfig) -> Result<gst
         warn!("nvmsgbroker queue overrun; Older Message Buffer");
         None
     })?;
-    transform.set_property("config", "config/filters/msgconv_config.txt")?;
-    transform.set_property("msg2p-lib", config.lib)?;
-    let payload_type = transform.property("payload-type").unwrap().type_();
-    let enum_class = glib::EnumClass::new(payload_type).unwrap();
-    let value = enum_class.to_value_by_nick("PAYLOAD_DEEPSTREAM_MINIMAL").unwrap();
-    transform.set_property("payload-type", value)?;
     sink.set_property("proto-lib", "/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_kafka_proto.so")?;
     sink.set_property("conn-str", format!("{};{}", config.server, config.port))?;
     sink.set_property("topic", config.topic)?;

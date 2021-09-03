@@ -10,7 +10,6 @@ filters:
 sinks:
   display: true
   msg_broker:
-    lib: "libnvds_msgconv.so"
     topic: "ds-meta"
     server: "kafka"
     port: 9092

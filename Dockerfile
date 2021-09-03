@@ -16,6 +16,10 @@ RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 FROM base as build
+RUN apt-get update && apt-get install -y \
+    libglib2.0-dev \
+    libjson-glib-dev uuid-dev
+
 WORKDIR /usr/src/deepstream-rs
 
 # Copy our manifests
@@ -33,6 +37,12 @@ RUN cd gst-plugins/gst-nvobjconv &&\
     make &&\
     make install
 
+# Build custom libs
+COPY libs libs
+RUN cd libs/nvmsgconv &&\
+    make &&\
+    make install
+
 # Copy source code
 COPY ./src ./src
 
@@ -46,7 +56,7 @@ FROM base
 WORKDIR /usr/src/deepstream-rs
 
 COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
-COPY --from=build /opt/nvidia/deepstream/deepstream-5.1/lib/gst-plugins /opt/nvidia/deepstream/deepstream-5.1/lib/gst-plugins
+COPY --from=build /opt/nvidia/deepstream/deepstream-5.1/lib /opt/nvidia/deepstream/deepstream-5.1/lib
 
 # Copy configurations
 COPY ./config ./config
