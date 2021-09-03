@@ -18,9 +18,23 @@ pub enum FilterConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct MsgBrokerSinkConfig {
+    pub topic: String,
+    pub server: String,
+    pub port: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SinksConfig {
+    pub display: bool,
+    pub msg_broker: MsgBrokerSinkConfig,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PipelineConfig {
     pub sources: Vec<SourceConfig>,
     pub filters: Vec<FilterConfig>,
+    pub sinks: SinksConfig,
 }
 
 impl PipelineConfig {

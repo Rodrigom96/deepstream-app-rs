@@ -1,8 +1,15 @@
 sources:
-  - id: 1
+  - id: 0
     kind:
       Uri:
         uri: "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
 filters:
   - NvInfer:
       config_path: "config/filters/pgie_config.txt"
+
+sinks:
+  display: true
+  msg_broker:
+    topic: "ds-meta"
+    server: "kafka"
+    port: 9092

@@ -16,7 +16,10 @@ pub struct Pipeline {
 }
 
 impl Pipeline {
-    pub fn new(display: bool, filters_config: Vec<config::FilterConfig>) -> Result<Self, Error> {
+    pub fn new(
+        filters_config: Vec<config::FilterConfig>,
+        sinks_config: config::SinksConfig,
+    ) -> Result<Self, Error> {
         gst::init()?;
 
         let pipeline = gst::Pipeline::new(None);
@@ -24,7 +27,7 @@ impl Pipeline {
         // create elementes
         let streammux = create_streamux().expect("Cant create steamux");
         let filters_bin = filters::create_bin(filters_config)?;
-        let sink = sinks::create_sink_bin(display).expect("Cant create sink_bin");
+        let sink = sinks::create_sink_bin(sinks_config).expect("Cant create sink_bin");
         // add elements
         pipeline.add_many(&[&streammux])?;
         pipeline.add(&filters_bin)?;
@@ -36,7 +39,7 @@ impl Pipeline {
             .expect("Failed to link streamux with filters_bin");
         filters_bin
             .link(&sink)
-            .expect("Failed to link streamux with filters_bin");
+            .expect("Failed to link filters_bin with sink");
 
         Ok(Pipeline {
             pipeline,
