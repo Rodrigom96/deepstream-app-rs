@@ -27,6 +27,12 @@ RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
     cargo build --release &&\
     sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 
+# Build custom gst-plugins
+COPY gst-plugins gst-plugins
+RUN cd gst-plugins/gst-nvobjconv &&\
+    make &&\
+    make install
+
 # Copy source code
 COPY ./src ./src
 
@@ -40,6 +46,7 @@ FROM base
 WORKDIR /usr/src/deepstream-rs
 
 COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
+COPY --from=build /opt/nvidia/deepstream/deepstream-5.1/lib/gst-plugins /opt/nvidia/deepstream/deepstream-5.1/lib/gst-plugins
 
 # Copy configurations
 COPY ./config ./config

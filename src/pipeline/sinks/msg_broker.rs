@@ -11,6 +11,8 @@ pub fn create_bin(name: Option<&str>, config: MsgBrokerSinkConfig) -> Result<gst
     let bin = gst::Bin::new(name);
 
     let queue = gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
+    let obj_transform =
+        gst::ElementFactory::make("nvobjconv", None).map_err(|_| MissingElement("nvobjconv"))?;
     let transform =
         gst::ElementFactory::make("nvmsgconv", None).map_err(|_| MissingElement("nvmsgconv"))?;
     let sink = gst::ElementFactory::make("nvmsgbroker", None)
@@ -26,15 +28,19 @@ pub fn create_bin(name: Option<&str>, config: MsgBrokerSinkConfig) -> Result<gst
     })?;
     transform.set_property("config", "config/filters/msgconv_config.txt")?;
     transform.set_property("msg2p-lib", config.lib)?;
-    transform.set_property_from_str("payload-type", "NVDS_PAYLOAD_DEEPSTREAM_MINIMAL");
+    let payload_type = transform.property("payload-type").unwrap().type_();
+    let enum_class = glib::EnumClass::new(payload_type).unwrap();
+    let value = enum_class.to_value_by_nick("PAYLOAD_DEEPSTREAM_MINIMAL").unwrap();
+    transform.set_property("payload-type", value)?;
     sink.set_property("proto-lib", "/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_kafka_proto.so")?;
     sink.set_property("conn-str", format!("{};{}", config.server, config.port))?;
     sink.set_property("topic", config.topic)?;
     sink.set_property("sync", false)?;
 
-    bin.add_many(&[&queue, &transform, &sink])?;
+    bin.add_many(&[&queue, &obj_transform, &transform, &sink])?;
     common::add_bin_ghost_pad(&bin, &queue, "sink")?;
-    queue.link(&transform)?;
+    queue.link(&obj_transform)?;
+    obj_transform.link(&transform)?;
     transform.link(&sink)?;
 
     Ok(bin)
