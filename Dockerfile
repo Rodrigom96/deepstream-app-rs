@@ -1,6 +1,4 @@
-FROM nvcr.io/nvidia/deepstream:5.1-21.02-samples as base
-
-FROM base as build
+FROM nvcr.io/nvidia/deepstream:5.1-21.02-devel as build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     # rust
@@ -13,11 +11,17 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-libav libgstrtspserver-1.0-dev \
     # nvmsgconv
     libglib2.0-dev \
-    libjson-glib-dev uuid-dev
+    libjson-glib-dev uuid-dev \
+    # others
+    wget
 
 # Install Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Download models
+WORKDIR /models
+RUN wget https://github.com/onnx/models/raw/master/vision/object_detection_segmentation/tiny-yolov2/model/tinyyolov2-8.onnx
 
 WORKDIR /usr/src/deepstream-rs
 
@@ -38,9 +42,8 @@ RUN cd gst-plugins/gst-nvobjconv &&\
 
 # Build custom libs
 COPY libs libs
-RUN cd libs/nvmsgconv &&\
-    make &&\
-    make install
+RUN cd libs/nvmsgconv && make && make install
+RUN cd libs/libnvdsinfer_custom_bbox_tiny_yolo && make && make install
 
 # Copy source code
 COPY ./src ./src
@@ -51,11 +54,12 @@ RUN cargo clippy -- -D warnings
 # Build for release
 RUN cargo install --path .
 
-FROM base
+FROM nvcr.io/nvidia/deepstream:5.1-21.02-base
 WORKDIR /usr/src/deepstream-rs
 
 COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
 COPY --from=build /opt/nvidia/deepstream/deepstream-5.1/lib /opt/nvidia/deepstream/deepstream-5.1/lib
+COPY --from=build /models /models
 
 # Copy configurations
 COPY ./config ./config
