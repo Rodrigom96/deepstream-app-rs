@@ -1,5 +1,6 @@
 FROM nvcr.io/nvidia/deepstream:5.1-21.02-samples as base
 
+FROM base as build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     # rust
@@ -9,16 +10,14 @@ RUN apt-get update && apt-get install -y \
     libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
-    gstreamer1.0-libav libgstrtspserver-1.0-dev
+    gstreamer1.0-libav libgstrtspserver-1.0-dev \
+    # nvmsgconv
+    libglib2.0-dev \
+    libjson-glib-dev uuid-dev
 
 # Install Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-FROM base as build
-RUN apt-get update && apt-get install -y \
-    libglib2.0-dev \
-    libjson-glib-dev uuid-dev
 
 WORKDIR /usr/src/deepstream-rs
 
