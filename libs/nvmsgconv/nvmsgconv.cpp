@@ -57,40 +57,6 @@ object_enum_to_str(NvDsObjectType type, gchar *objectId)
   }
 }
 
-static const gchar *
-to_str(gchar *cstr)
-{
-  return reinterpret_cast<const gchar *>(cstr) ? cstr : "";
-}
-
-static void
-generate_mask_array(NvDsEventMsgMeta *meta, JsonArray *jArray, GList *mask)
-{
-  unsigned int i;
-  GList *l;
-  stringstream ss;
-  bool started = false;
-
-  ss << meta->trackingId << "|" << g_list_length(mask);
-
-  for (l = mask; l != NULL; l = l->next)
-  {
-    GArray *polygon = (GArray *)l->data;
-
-    if (started)
-      ss << "|#";
-
-    started = true;
-
-    for (i = 0; i < polygon->len; i++)
-    {
-      gdouble value = g_array_index(polygon, gdouble, i);
-      ss << "|" << value;
-    }
-  }
-  json_array_add_string_element(jArray, ss.str().c_str());
-}
-
 static gchar *
 generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
 {
@@ -111,121 +77,24 @@ generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
   JsonNode *rootNode;
   JsonObject *jobject;
   JsonArray *jArray;
-  JsonArray *maskArray = NULL;
   guint i;
-  stringstream ss;
   gchar *message = NULL;
 
   jArray = json_array_new();
 
   for (i = 0; i < size; i++)
   {
-    GList *objectMask = NULL;
-
-    ss.str("");
-    ss.clear();
-
     NvDsEventMsgMeta *meta = events[i].metadata;
-    ss << meta->trackingId << "|" << meta->bbox.left << "|" << meta->bbox.top
-       << "|" << meta->bbox.left + meta->bbox.width << "|" << meta->bbox.top + meta->bbox.height
-       << "|" << object_enum_to_str(meta->objType, meta->objectId);
 
-    if (meta->extMsg && meta->extMsgSize)
-    {
-      // Attach secondary inference attributes.
-      switch (meta->objType)
-      {
-      case NVDS_OBJECT_TYPE_VEHICLE:
-      {
-        NvDsVehicleObject *dsObj = (NvDsVehicleObject *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->type) << "|" << to_str(dsObj->make) << "|"
-             << to_str(dsObj->model) << "|" << to_str(dsObj->color) << "|" << to_str(dsObj->license)
-             << "|" << to_str(dsObj->region) << "|" << meta->confidence;
-        }
-      }
-      break;
-      case NVDS_OBJECT_TYPE_PERSON:
-      {
-        NvDsPersonObject *dsObj = (NvDsPersonObject *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->gender) << "|" << dsObj->age << "|"
-             << to_str(dsObj->hair) << "|" << to_str(dsObj->cap) << "|" << to_str(dsObj->apparel)
-             << "|" << meta->confidence;
-        }
-      }
-      break;
-      case NVDS_OBJECT_TYPE_FACE:
-      {
-        NvDsFaceObject *dsObj = (NvDsFaceObject *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->gender) << "|" << dsObj->age << "|"
-             << to_str(dsObj->hair) << "|" << to_str(dsObj->cap) << "|" << to_str(dsObj->glasses)
-             << "|" << to_str(dsObj->facialhair) << "|" << to_str(dsObj->name) << "|"
-             << "|" << to_str(dsObj->eyecolor) << "|" << meta->confidence;
-        }
-      }
-      break;
-      case NVDS_OBJECT_TYPE_VEHICLE_EXT:
-      {
-        NvDsVehicleObjectExt *dsObj = (NvDsVehicleObjectExt *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->type) << "|" << to_str(dsObj->make) << "|"
-             << to_str(dsObj->model) << "|" << to_str(dsObj->color) << "|" << to_str(dsObj->license)
-             << "|" << to_str(dsObj->region) << "|" << meta->confidence;
+    jobject = json_object_new();
+    json_object_set_int_member(jobject, "id", meta->trackingId);
+    json_object_set_int_member(jobject, "x", meta->bbox.left);
+    json_object_set_int_member(jobject, "y", meta->bbox.top);
+    json_object_set_int_member(jobject, "width", meta->bbox.width);
+    json_object_set_int_member(jobject, "height", meta->bbox.height);
+    json_object_set_string_member(jobject, "obj_type", object_enum_to_str(meta->objType, meta->objectId));
 
-          if (dsObj->mask)
-            objectMask = dsObj->mask;
-        }
-      }
-      break;
-      case NVDS_OBJECT_TYPE_PERSON_EXT:
-      {
-        NvDsPersonObjectExt *dsObj = (NvDsPersonObjectExt *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->gender) << "|" << dsObj->age << "|"
-             << to_str(dsObj->hair) << "|" << to_str(dsObj->cap) << "|" << to_str(dsObj->apparel)
-             << "|" << meta->confidence;
-
-          if (dsObj->mask)
-            objectMask = dsObj->mask;
-        }
-      }
-      break;
-      case NVDS_OBJECT_TYPE_FACE_EXT:
-      {
-        NvDsFaceObjectExt *dsObj = (NvDsFaceObjectExt *)meta->extMsg;
-        if (dsObj)
-        {
-          ss << "|#|" << to_str(dsObj->gender) << "|" << dsObj->age << "|"
-             << to_str(dsObj->hair) << "|" << to_str(dsObj->cap) << "|" << to_str(dsObj->glasses)
-             << "|" << to_str(dsObj->facialhair) << "|" << to_str(dsObj->name) << "|"
-             << "|" << to_str(dsObj->eyecolor) << "|" << meta->confidence;
-
-          if (dsObj->mask)
-            objectMask = dsObj->mask;
-        }
-      }
-      break;
-      default:
-        cout << "Object type (" << meta->objType << ") not implemented" << endl;
-        break;
-      }
-    }
-
-    if (objectMask)
-    {
-      if (maskArray == NULL)
-        maskArray = json_array_new();
-      generate_mask_array(meta, maskArray, objectMask);
-    }
-
-    json_array_add_string_element(jArray, ss.str().c_str());
+    json_array_add_object_element(jArray, jobject);
   }
 
   // It is assumed that all events / objects are associated with same frame.
@@ -234,11 +103,9 @@ generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
   jobject = json_object_new();
   json_object_set_int_member(jobject, "id", events[0].metadata->frameId);
   json_object_set_string_member(jobject, "timestamp", events[0].metadata->ts);
-  json_object_set_int_member(jobject, "sensor_id", events[0].metadata->sensorId);
+  json_object_set_int_member(jobject, "camera_id", events[0].metadata->sensorId);
 
   json_object_set_array_member(jobject, "objects", jArray);
-  if (maskArray && json_array_get_length(maskArray) > 0)
-    json_object_set_array_member(jobject, "masks", maskArray);
 
   rootNode = json_node_new(JSON_NODE_OBJECT);
   json_node_set_object(rootNode, jobject);

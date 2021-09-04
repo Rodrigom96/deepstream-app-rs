@@ -331,30 +331,6 @@ static void meta_free_func(gpointer data, gpointer user_data)
 }
 
 static void
-generate_vehicle_meta(gpointer data)
-{
-  NvDsVehicleObject *obj = (NvDsVehicleObject *)data;
-
-  obj->type = g_strdup("sedan");
-  obj->color = g_strdup("blue");
-  obj->make = g_strdup("Bugatti");
-  obj->model = g_strdup("M");
-  obj->license = g_strdup("XX1234");
-  obj->region = g_strdup("CA");
-}
-
-static void
-generate_person_meta(gpointer data)
-{
-  NvDsPersonObject *obj = (NvDsPersonObject *)data;
-  obj->age = 45;
-  obj->cap = g_strdup("none");
-  obj->hair = g_strdup("black");
-  obj->gender = g_strdup("male");
-  obj->apparel = g_strdup("formal");
-}
-
-static void
 generate_event_msg_meta(gpointer data, gint class_id, guint sensor_id, NvDsObjectMeta *obj_params)
 {
   NvDsEventMsgMeta *meta = (NvDsEventMsgMeta *)data;
@@ -374,24 +350,12 @@ generate_event_msg_meta(gpointer data, gint class_id, guint sensor_id, NvDsObjec
     meta->type = NVDS_EVENT_MOVING;
     meta->objType = NVDS_OBJECT_TYPE_VEHICLE;
     meta->objClassId = PGIE_CLASS_ID_VEHICLE;
-
-    NvDsVehicleObject *obj = (NvDsVehicleObject *)g_malloc0(sizeof(NvDsVehicleObject));
-    generate_vehicle_meta(obj);
-
-    meta->extMsg = obj;
-    meta->extMsgSize = sizeof(NvDsVehicleObject);
   }
   else if (class_id == PGIE_CLASS_ID_PERSON)
   {
     meta->type = NVDS_EVENT_ENTRY;
     meta->objType = NVDS_OBJECT_TYPE_PERSON;
     meta->objClassId = PGIE_CLASS_ID_PERSON;
-
-    NvDsPersonObject *obj = (NvDsPersonObject *)g_malloc0(sizeof(NvDsPersonObject));
-    generate_person_meta(obj);
-
-    meta->extMsg = obj;
-    meta->extMsgSize = sizeof(NvDsPersonObject);
   }
 }
 
@@ -421,10 +385,8 @@ gst_nvobjconv_transform_ip(GstBaseTransform *trans, GstBuffer *buf)
 
   if (batch_meta)
   {
-    NvDsMetaList *l = NULL;
     NvDsMetaList *l_frame = NULL;
     NvDsMetaList *l_obj = NULL;
-    NvDsMetaList *user_meta_list = NULL;
     NvDsFrameMeta *frame_meta = NULL;
     NvDsUserMeta *user_event_meta = NULL;
 
