@@ -16,7 +16,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "gstnvobjconv.h"
-#include "nvdsmeta_schema.h"
+#include "nvdsmeta_custom_schema.h"
 #include "nvdsmeta.h"
 #include "gstnvdsmeta.h"
 
@@ -213,62 +213,8 @@ static gpointer meta_copy_func(gpointer data, gpointer user_data)
   if (srcMeta->ts)
     dstMeta->ts = g_strdup(srcMeta->ts);
 
-  if (srcMeta->sensorStr)
-    dstMeta->sensorStr = g_strdup(srcMeta->sensorStr);
-
-  if (srcMeta->objSignature.size > 0)
-  {
-    dstMeta->objSignature.signature = g_memdup(srcMeta->objSignature.signature,
-                                               srcMeta->objSignature.size);
-    dstMeta->objSignature.size = srcMeta->objSignature.size;
-  }
-
-  if (srcMeta->objectId)
-  {
-    dstMeta->objectId = g_strdup(srcMeta->objectId);
-  }
-
-  if (srcMeta->extMsgSize > 0)
-  {
-    if (srcMeta->objType == NVDS_OBJECT_TYPE_VEHICLE)
-    {
-      NvDsVehicleObject *srcObj = (NvDsVehicleObject *)srcMeta->extMsg;
-      NvDsVehicleObject *obj = (NvDsVehicleObject *)g_malloc0(sizeof(NvDsVehicleObject));
-      if (srcObj->type)
-        obj->type = g_strdup(srcObj->type);
-      if (srcObj->make)
-        obj->make = g_strdup(srcObj->make);
-      if (srcObj->model)
-        obj->model = g_strdup(srcObj->model);
-      if (srcObj->color)
-        obj->color = g_strdup(srcObj->color);
-      if (srcObj->license)
-        obj->license = g_strdup(srcObj->license);
-      if (srcObj->region)
-        obj->region = g_strdup(srcObj->region);
-
-      dstMeta->extMsg = obj;
-      dstMeta->extMsgSize = sizeof(NvDsVehicleObject);
-    }
-    else if (srcMeta->objType == NVDS_OBJECT_TYPE_PERSON)
-    {
-      NvDsPersonObject *srcObj = (NvDsPersonObject *)srcMeta->extMsg;
-      NvDsPersonObject *obj = (NvDsPersonObject *)g_malloc0(sizeof(NvDsPersonObject));
-
-      obj->age = srcObj->age;
-
-      if (srcObj->gender)
-        obj->gender = g_strdup(srcObj->gender);
-      if (srcObj->cap)
-        obj->cap = g_strdup(srcObj->cap);
-      if (srcObj->hair)
-        obj->hair = g_strdup(srcObj->hair);
-      if (srcObj->apparel)
-        obj->apparel = g_strdup(srcObj->apparel);
-      dstMeta->extMsg = obj;
-      dstMeta->extMsgSize = sizeof(NvDsPersonObject);
-    }
-  }
+  if (srcMeta->objClassLabel)
+    dstMeta->objClassLabel = g_strdup(srcMeta->objClassLabel);
 
   return dstMeta;
 }
@@ -279,53 +225,10 @@ static void meta_free_func(gpointer data, gpointer user_data)
   NvDsEventMsgMeta *srcMeta = (NvDsEventMsgMeta *)user_meta->user_meta_data;
 
   g_free(srcMeta->ts);
-  g_free(srcMeta->sensorStr);
 
-  if (srcMeta->objSignature.size > 0)
-  {
-    g_free(srcMeta->objSignature.signature);
-    srcMeta->objSignature.size = 0;
-  }
+  if (srcMeta->objClassLabel)
+      g_free(srcMeta->objClassLabel);
 
-  if (srcMeta->objectId)
-  {
-    g_free(srcMeta->objectId);
-  }
-
-  if (srcMeta->extMsgSize > 0)
-  {
-    if (srcMeta->objType == NVDS_OBJECT_TYPE_VEHICLE)
-    {
-      NvDsVehicleObject *obj = (NvDsVehicleObject *)srcMeta->extMsg;
-      if (obj->type)
-        g_free(obj->type);
-      if (obj->color)
-        g_free(obj->color);
-      if (obj->make)
-        g_free(obj->make);
-      if (obj->model)
-        g_free(obj->model);
-      if (obj->license)
-        g_free(obj->license);
-      if (obj->region)
-        g_free(obj->region);
-    }
-    else if (srcMeta->objType == NVDS_OBJECT_TYPE_PERSON)
-    {
-      NvDsPersonObject *obj = (NvDsPersonObject *)srcMeta->extMsg;
-
-      if (obj->gender)
-        g_free(obj->gender);
-      if (obj->cap)
-        g_free(obj->cap);
-      if (obj->hair)
-        g_free(obj->hair);
-      if (obj->apparel)
-        g_free(obj->apparel);
-    }
-    g_free(srcMeta->extMsg);
-    srcMeta->extMsgSize = 0;
-  }
   g_free(user_meta->user_meta_data);
   user_meta->user_meta_data = NULL;
 }
@@ -335,28 +238,14 @@ generate_event_msg_meta(gpointer data, gint class_id, guint sensor_id, NvDsObjec
 {
   NvDsEventMsgMeta *meta = (NvDsEventMsgMeta *)data;
   meta->sensorId = sensor_id;
-  meta->placeId = sensor_id;
-  meta->moduleId = sensor_id;
 
   meta->ts = (gchar *)g_malloc0(MAX_TIME_STAMP_LEN + 1);
-  meta->objectId = (gchar *)g_malloc0(MAX_LABEL_SIZE);
+  meta->objClassLabel = (gchar *)g_malloc0(MAX_LABEL_SIZE);
 
-  strncpy(meta->objectId, obj_params->obj_label, MAX_LABEL_SIZE);
+  meta->objClassId = class_id;
+  strncpy(meta->objClassLabel, obj_params->obj_label, MAX_LABEL_SIZE);
 
   generate_ts_rfc3339(meta->ts, MAX_TIME_STAMP_LEN);
-
-  if (class_id == PGIE_CLASS_ID_VEHICLE)
-  {
-    meta->type = NVDS_EVENT_MOVING;
-    meta->objType = NVDS_OBJECT_TYPE_VEHICLE;
-    meta->objClassId = PGIE_CLASS_ID_VEHICLE;
-  }
-  else if (class_id == PGIE_CLASS_ID_PERSON)
-  {
-    meta->type = NVDS_EVENT_ENTRY;
-    meta->objType = NVDS_OBJECT_TYPE_PERSON;
-    meta->objClassId = PGIE_CLASS_ID_PERSON;
-  }
 }
 
 static GstFlowReturn

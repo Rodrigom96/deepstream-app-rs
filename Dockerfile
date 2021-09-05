@@ -34,6 +34,9 @@ RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
     cargo build --release &&\
     sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 
+# Copy commons
+COPY includes includes
+
 # Build custom gst-plugins
 COPY gst-plugins gst-plugins
 RUN cd gst-plugins/gst-nvobjconv &&\

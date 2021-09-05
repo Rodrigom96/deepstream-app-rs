@@ -21,7 +21,8 @@ GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugi
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 
 CFLAGS+= -fPIC -DDS_VERSION=\"5.1.0\" \
-	 -I/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/sources/includes
+	 -I/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/sources/includes \
+	 -I../../includes
 
 LIBS := -shared -Wl,-no-undefined
 LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_helper -lnvds_meta -lnvds_msgconv -ldl \

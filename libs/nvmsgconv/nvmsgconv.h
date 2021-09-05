@@ -21,7 +21,7 @@
 #define NVMSGCONV_H_
 
 
-#include "nvdsmeta_schema.h"
+#include "nvdsmeta_custom_schema.h"
 #include <glib.h>
 
 #ifdef __cplusplus
