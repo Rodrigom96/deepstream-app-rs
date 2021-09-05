@@ -67,10 +67,9 @@ fn generate_payload(events: *const NvDsEvent, size: c_uint) -> NvDsPayload {
         unsafe { std::slice::from_raw_parts(events as *const NvDsEvent, size as usize) };
 
     let message_str = message::generate_message(events_vec);
+    let message_len = message_str.len();
     let c_str = CString::new(message_str).unwrap();
-    let bytes = c_str.as_bytes();
-    let message_len = bytes.len();
-    let c_payload_message: *mut c_char = bytes.as_ptr() as *mut c_char;
+    let c_payload_message = c_str.into_raw();
 
     let payload = NvDsPayload {
         payload: c_payload_message as *mut c_void,
