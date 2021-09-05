@@ -11,22 +11,19 @@ use glib::{gboolean, gconstpointer, gpointer, GType};
 
 #[repr(C)]
 pub enum NvDsEventType {
-    NVDS_EVENT_ENTRY,
-    NVDS_EVENT_EXIT,
-    NVDS_EVENT_MOVING,
-    NVDS_EVENT_STOPPED,
-    NVDS_EVENT_EMPTY,
-    NVDS_EVENT_PARKED,
-    NVDS_EVENT_RESET,
+    Entry,
+    Exit,
+    Moving,
+    Stopped,
+    Empty,
+    Parked,
+    Reset,
 }
 
 #[repr(C)]
 pub enum NvDsPayloadType {
-    NVDS_PAYLOAD_DEEPSTREAM,
-    NVDS_PAYLOAD_DEEPSTREAM_MINIMAL,
-    NVDS_PAYLOAD_RESERVED,
-    NVDS_PAYLOAD_CUSTOM,
-    NVDS_PAYLOAD_FORCE32,
+    Deepstream,
+    DeepstreamMinimal,
 }
 
 #[repr(C)]
@@ -40,24 +37,24 @@ pub struct NvDsRect {
 #[repr(C)]
 pub struct NvDsEventMsgMeta {
     pub bbox: NvDsRect,
-    pub objClassId: c_int,
-    pub objClassLabel: *mut c_char,
-    pub sensorId: c_int,
-    pub frameId: c_int,
+    pub obj_class_id: c_int,
+    pub obj_class_label: *mut c_char,
+    pub sensor_id: c_int,
+    pub frame_id: c_int,
     pub confidence: c_double,
-    pub trackingId: c_int,
+    pub tracking_id: c_int,
     pub ts: *mut c_char,
 }
 
 #[repr(C)]
 pub struct NvDsEvent {
-    pub eventType: NvDsEventType,
+    pub event_type: NvDsEventType,
     pub metadata: *mut NvDsEventMsgMeta,
 }
 
 #[repr(C)]
 pub struct NvDsPayload {
     pub payload: gpointer,
-    pub payloadSize: c_uint,
-    pub componentId: c_uint,
+    pub payload_size: c_uint,
+    pub component_id: c_uint,
 }

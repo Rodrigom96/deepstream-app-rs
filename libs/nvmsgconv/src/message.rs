@@ -30,17 +30,17 @@ pub fn generate_message(events: &[NvDsEvent]) -> String {
         let meta = unsafe { &*event.metadata };
         
         // get label String
-        let c_str: &CStr = unsafe { CStr::from_ptr(meta.objClassLabel) };
+        let c_str: &CStr = unsafe { CStr::from_ptr(meta.obj_class_label) };
         let str_slice: &str = c_str.to_str().unwrap();
         let label: String = str_slice.to_owned();
         
         let obj = Object {
-            id: meta.trackingId,
+            id: meta.tracking_id,
             x: meta.bbox.left as u32,
             y: meta.bbox.top as u32,
             width: meta.bbox.width as u32,
             height: meta.bbox.height as u32,
-            label: label,
+            label,
         };
 
         objects.push(obj);
@@ -55,13 +55,12 @@ pub fn generate_message(events: &[NvDsEvent]) -> String {
     let timestamp: String = str_slice.to_owned();
     
     let message = Message {
-        frame_id: meta.frameId as u64,
-        timestamp: timestamp,
-        camera_id: meta.sensorId as u32,
-        objects: objects,
+        frame_id: meta.frame_id as u64,
+        timestamp,
+        camera_id: meta.sensor_id as u32,
+        objects,
     };
 
     // serealize message to json
-    let serialized = serde_json::to_string(&message).unwrap();
-    serialized
+    serde_json::to_string(&message).unwrap()
 }

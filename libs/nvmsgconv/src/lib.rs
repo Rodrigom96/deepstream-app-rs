@@ -13,8 +13,8 @@ pub struct NvDsMsg2pCtx {}
 
 #[no_mangle]
 pub extern "C" fn nvds_msg2p_ctx_create(
-    file: *const c_char,
-    payload_type: NvDsPayloadType,
+    _file: *const c_char,
+    _payload_type: NvDsPayloadType,
 ) -> *mut NvDsMsg2pCtx {
     let ctx = NvDsMsg2pCtx {};
 
@@ -28,7 +28,7 @@ pub extern "C" fn nvds_msg2p_ctx_destroy(ctx: *mut NvDsMsg2pCtx) {
 
 #[no_mangle]
 pub extern "C" fn nvds_msg2p_generate(
-    ctx: *mut NvDsMsg2pCtx,
+    _ctx: *mut NvDsMsg2pCtx,
     events: *const NvDsEvent,
     size: c_uint,
 ) -> *mut NvDsPayload {
@@ -38,24 +38,24 @@ pub extern "C" fn nvds_msg2p_generate(
 
 #[no_mangle]
 pub extern "C" fn nvds_msg2p_generate_multiple(
-    ctx: *mut NvDsMsg2pCtx,
+    _ctx: *mut NvDsMsg2pCtx,
     events: *const NvDsEvent,
     size: c_uint,
-    payloadCount: *mut c_uint,
+    payload_count: *mut c_uint,
 ) -> *mut *mut NvDsPayload {
     let mut payloads = Vec::new();
 
     let payload = generate_payload(events, size);
     payloads.push(Box::into_raw(Box::new(payload)));
     unsafe {
-        *payloadCount += 1;
+        *payload_count += 1;
     }
 
     payloads.as_mut_ptr()
 }
 
 #[no_mangle]
-pub extern "C" fn nvds_msg2p_release(ctx: *mut NvDsMsg2pCtx, payload: *mut NvDsPayload) {
+pub extern "C" fn nvds_msg2p_release(_ctx: *mut NvDsMsg2pCtx, payload: *mut NvDsPayload) {
     unsafe {
         drop((*payload).payload);
     }
@@ -71,11 +71,9 @@ fn generate_payload(events: *const NvDsEvent, size: c_uint) -> NvDsPayload {
     let c_str = CString::new(message_str).unwrap();
     let c_payload_message = c_str.into_raw();
 
-    let payload = NvDsPayload {
+    NvDsPayload {
         payload: c_payload_message as *mut c_void,
-        payloadSize: message_len as u32,
-        componentId: 0,
-    };
-
-    payload
+        payload_size: message_len as u32,
+        component_id: 0,
+    }
 }
