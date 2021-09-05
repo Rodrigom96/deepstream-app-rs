@@ -1,36 +1,18 @@
 [property]
 gpu-id=0
-net-scale-factor=0.0039215697906911373
-model-file=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/resnet10.caffemodel
-proto-file=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/resnet10.prototxt
-#model-engine-file=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/resnet10.caffemodel_b30_gpu0_int8.engine
-labelfile-path=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/labels.txt
-int8-calib-file=/opt/nvidia/deepstream/deepstream/samples/models/Primary_Detector/cal_trt.bin
-batch-size=30
-process-mode=1
+#0=RGB, 1=BGR
 model-color-format=0
+onnx-file=/models/tinyyolov2-8.onnx
+#custom-network-config=yolov2.cfg
+#model-file=yolov2.weights
+#model-engine-file=/models/tiny_yolov2.onnx_b1_fp16.engine
+labelfile-path=labels.txt
 ## 0=FP32, 1=INT8, 2=FP16 mode
-network-mode=1
-num-detected-classes=4
-interval=0
+network-mode=0
+num-detected-classes=20
 gie-unique-id=1
-output-blob-names=conv2d_bbox;conv2d_cov/Sigmoid
-force-implicit-batch-dim=1
-#parse-bbox-func-name=NvDsInferParseCustomResnet
-#custom-lib-path=/path/to/libnvdsparsebbox.so
-## 0=Group Rectangles, 1=DBSCAN, 2=NMS, 3= DBSCAN+NMS Hybrid, 4 = None(No clustering)
-#cluster-mode=1
-#scaling-filter=0
-#scaling-compute-hw=0
-
-#Use these config params for group rectangles clustering mode
-[class-attrs-all]
-pre-cluster-threshold=0.2
-group-threshold=1
-eps=0.2
-roi-top-offset=0
-roi-bottom-offset=0
-detected-min-w=0
-detected-min-h=0
-detected-max-w=0
-detected-max-h=0
+is-classifier=0
+maintain-aspect-ratio=1
+output-blob-names=grid
+parse-bbox-func-name=NvDsInferParseCustomYoloV2Tiny
+custom-lib-path=/opt/nvidia/deepstream/deepstream-5.1/lib/libnvdsinfer_custom_bbox_tiny_yolo.so

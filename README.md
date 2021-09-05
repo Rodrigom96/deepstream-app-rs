@@ -26,3 +26,4 @@ make run
 - https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
 - https://github.com/mdegans/deepstream-5.1
 - https://github.com/alexcrichton/rust-ffi-examples
+- https://github.com/thatbrguy/Deep-Stream-ONNX

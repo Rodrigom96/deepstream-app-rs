@@ -31,32 +31,6 @@ struct NvDsPayloadPriv
 {
 };
 
-static const gchar *
-object_enum_to_str(NvDsObjectType type, gchar *objectId)
-{
-  switch (type)
-  {
-  case NVDS_OBJECT_TYPE_VEHICLE:
-    return "vehicle";
-  case NVDS_OBJECT_TYPE_FACE:
-    return "face";
-  case NVDS_OBJECT_TYPE_PERSON:
-    return "person";
-  case NVDS_OBJECT_TYPE_BAG:
-    return "bag";
-  case NVDS_OBJECT_TYPE_BICYCLE:
-    return "bicycle";
-  case NVDS_OBJECT_TYPE_ROADSIGN:
-    return "road_sign";
-  case NVDS_OBJECT_TYPE_CUSTOM:
-    return "custom";
-  case NVDS_OBJECT_TYPE_UNKNOWN:
-    return objectId ? objectId : "unknown";
-  default:
-    return "unknown";
-  }
-}
-
 static gchar *
 generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
 {
@@ -92,7 +66,7 @@ generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
     json_object_set_int_member(jobject, "y", meta->bbox.top);
     json_object_set_int_member(jobject, "width", meta->bbox.width);
     json_object_set_int_member(jobject, "height", meta->bbox.height);
-    json_object_set_string_member(jobject, "obj_type", object_enum_to_str(meta->objType, meta->objectId));
+    json_object_set_string_member(jobject, "label", meta->objClassLabel);
 
     json_array_add_object_element(jArray, jobject);
   }
@@ -101,7 +75,7 @@ generate_message(NvDsMsg2pCtx *ctx, NvDsEvent *events, guint size)
   // Therefore ts / sensorId / frameId of first object can be used.
 
   jobject = json_object_new();
-  json_object_set_int_member(jobject, "id", events[0].metadata->frameId);
+  json_object_set_int_member(jobject, "frame_id", events[0].metadata->frameId);
   json_object_set_string_member(jobject, "timestamp", events[0].metadata->ts);
   json_object_set_int_member(jobject, "camera_id", events[0].metadata->sensorId);
 
