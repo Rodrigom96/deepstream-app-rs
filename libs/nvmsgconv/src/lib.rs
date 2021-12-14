@@ -55,6 +55,25 @@ pub extern "C" fn nvds_msg2p_generate_multiple(
 }
 
 #[no_mangle]
+pub extern "C" fn nvds_msg2p_generate_new(
+    _ctx: *mut NvDsMsg2pCtx,
+    events: *const NvDsEvent,
+    size: c_uint,
+) -> *mut NvDsPayload {
+    panic!("Not implemented");
+}
+
+#[no_mangle]
+pub extern "C" fn nvds_msg2p_generate_multiple_new(
+    _ctx: *mut NvDsMsg2pCtx,
+    events: *const NvDsEvent,
+    size: c_uint,
+    payload_count: *mut c_uint,
+) -> *mut *mut NvDsPayload {
+    panic!("Not implemented");
+}
+
+#[no_mangle]
 pub extern "C" fn nvds_msg2p_release(_ctx: *mut NvDsMsg2pCtx, payload: *mut NvDsPayload) {
     unsafe {
         drop((*payload).payload);
