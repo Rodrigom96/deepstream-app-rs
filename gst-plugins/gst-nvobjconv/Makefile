@@ -15,12 +15,12 @@ LIB:=libnvdsgst_objconv.so
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=5.1
+NVDS_VERSION:=6.0
 
 GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugins/
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 
-CFLAGS+= -fPIC -DDS_VERSION=\"5.1.0\" \
+CFLAGS+= -fPIC -DDS_VERSION=\"6.0.0\" \
 	 -I/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/sources/includes \
 	 -I../../includes
 

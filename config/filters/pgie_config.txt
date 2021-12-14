@@ -15,4 +15,4 @@ is-classifier=0
 maintain-aspect-ratio=1
 output-blob-names=grid
 parse-bbox-func-name=NvDsInferParseCustomYoloV2Tiny
-custom-lib-path=/opt/nvidia/deepstream/deepstream-5.1/lib/libnvdsinfer_custom_bbox_tiny_yolo.so
+custom-lib-path=/opt/nvidia/deepstream/deepstream-6.0/lib/libnvdsinfer_custom_bbox_tiny_yolo.so
