@@ -11,4 +11,4 @@ test:
 	docker run -it --rm $(DOCKER_TAG) $(COMMAND_TEST)
 
 bash:
-	docker run -it $(DOCKER_TAG) bash
+	docker-compose run app bash

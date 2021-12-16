@@ -2,7 +2,7 @@ sources:
   - id: 0
     kind:
       Uri:
-        uri: "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
+        uri: "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
 filters:
   - NvInfer:
       config_path: "config/filters/pgie_config.txt"
