@@ -4,6 +4,7 @@ use anyhow::Error;
 use gst::prelude::*;
 
 mod nvinfer;
+mod tracker;
 
 pub fn create_bin(filters_config: Vec<FilterConfig>) -> Result<gst::Bin, Error> {
     let num_filters = filters_config.len();
@@ -18,6 +19,10 @@ pub fn create_bin(filters_config: Vec<FilterConfig>) -> Result<gst::Bin, Error> 
             FilterConfig::NvInfer { config_path } => {
                 nvinfer::create_element(config_path.to_string())?
             }
+            FilterConfig::Tracker {
+                lib_path,
+                config_path,
+            } => tracker::create_element(lib_path.clone(), config_path.clone())?,
         };
 
         // add element to bin

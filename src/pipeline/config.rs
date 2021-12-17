@@ -15,6 +15,7 @@ pub struct SourceConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FilterConfig {
     NvInfer { config_path: String },
+    Tracker { lib_path: Option<String>, config_path: Option<String> },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

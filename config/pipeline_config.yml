@@ -6,6 +6,9 @@ sources:
 filters:
   - NvInfer:
       config_path: "config/filters/pgie_config.txt"
+  - Tracker:
+      lib_path: null
+      config_path: null
 
 sinks:
   display: true
