@@ -6,6 +6,7 @@ edition = "2018"
 [dependencies]
 glib = "0.14.2"
 gst = { version = "0.17.2", package = "gstreamer" }
+gst-rtsp-server = { version = "0.17.2", package = "gstreamer-rtsp-server" }
 anyhow = "1.0"
 derive_more = "0.99.5"
 env_logger = "0.9"
