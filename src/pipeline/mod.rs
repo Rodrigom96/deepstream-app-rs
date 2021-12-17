@@ -1,9 +1,12 @@
 use gst::prelude::*;
+use gst::MessageView;
 
 use anyhow::Error;
 
+use log::error;
+
 mod common;
-use common::{ErrorMessage, MissingElement};
+use common::MissingElement;
 
 pub mod config;
 mod filters;
@@ -27,7 +30,7 @@ impl Pipeline {
         // create elementes
         let streammux = create_streamux().expect("Cant create steamux");
         let filters_bin = filters::create_bin(filters_config)?;
-        let sink = sinks::create_sink_bin(sinks_config).expect("Cant create sink_bin");
+        let sink = sinks::create_sink_bin(sinks_config).unwrap();
         // add elements
         pipeline.add_many(&[&streammux])?;
         pipeline.add(&filters_bin)?;
@@ -63,36 +66,50 @@ impl Pipeline {
     }
 
     pub fn run(&self) -> Result<(), Error> {
-        self.pipeline.set_state(gst::State::Playing)?;
+        let main_loop = glib::MainLoop::new(None, false);
 
         let bus = self
             .pipeline
             .bus()
             .expect("Pipeline without bus. Shouldn't happen!");
+        bus.add_signal_watch();
 
-        for msg in bus.iter_timed(gst::ClockTime::NONE) {
-            use gst::MessageView;
+        let pipeline_weak = self.pipeline.downgrade();
+        let main_loop_clone = main_loop.clone();
+        bus.connect_message(None, move |_, msg| {
+            let pipeline = match pipeline_weak.upgrade() {
+                Some(pipeline) => pipeline,
+                None => return,
+            };
 
             match msg.view() {
-                MessageView::Eos(..) => break,
+                // Just set the pipeline to READY (which stops playback).
+                MessageView::Eos(..) => {
+                    pipeline
+                        .set_state(gst::State::Ready)
+                        .expect("Unable to set the pipeline to the `Ready` state");
+                }
                 MessageView::Error(err) => {
-                    self.pipeline.set_state(gst::State::Null)?;
-                    return Err(ErrorMessage {
-                        src: msg
-                            .src()
-                            .map(|s| String::from(s.path_string()))
-                            .unwrap_or_else(|| String::from("None")),
-                        error: err.error().to_string(),
-                        debug: err.debug(),
-                        source: err.error(),
-                    }
-                    .into());
+                    let main_loop = &main_loop_clone;
+                    error!(
+                        "Error from {:?}: {} ({:?})",
+                        err.src().map(|s| s.path_string()),
+                        err.error(),
+                        err.debug()
+                    );
+                    main_loop.quit();
                 }
                 _ => (),
             }
-        }
+        });
+
+        self.pipeline.set_state(gst::State::Playing)?;
+
+        main_loop.run();
 
         self.pipeline.set_state(gst::State::Null)?;
+
+        bus.remove_signal_watch();
 
         Ok(())
     }
