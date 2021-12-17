@@ -9,7 +9,6 @@ use common::MissingElement;
 
 enum EncoderType {
     H264,
-    H265,
 }
 
 #[derive(Debug, Display, Error)]
@@ -18,7 +17,11 @@ struct NoMountPoints;
 
 static mut RTSP_SERVERS: Vec<gst_rtsp_server::RTSPServer> = Vec::new();
 
-pub fn create_bin(name: Option<&str>) -> Result<gst::Bin, Error> {
+pub fn create_bin(
+    name: Option<&str>,
+    rtsp_path: &str,
+    rtsp_port: u32,
+) -> Result<gst::Bin, Error> {
     let bin = gst::Bin::new(name);
 
     let queue = gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
@@ -67,15 +70,19 @@ pub fn create_bin(name: Option<&str>) -> Result<gst::Bin, Error> {
 
     common::add_bin_ghost_pad(&bin, &queue, "sink")?;
 
-    start_rtsp_streaming(8554, 5400, EncoderType::H264);
+    start_rtsp_streaming(rtsp_path, rtsp_port, 5400, EncoderType::H264);
 
     Ok(bin)
 }
 
-fn start_rtsp_streaming(rtsp_port: u32, udpsink_port: u32, encoder: EncoderType) {
+fn start_rtsp_streaming(
+    rtsp_path: &str,
+    rtsp_port: u32,
+    udpsink_port: u32,
+    encoder: EncoderType,
+) {
     let encoder_name = match encoder {
         EncoderType::H264 => "H264",
-        EncoderType::H265 => "H265",
     };
 
     let udp_buffer_size: u64 = 512 * 1024;
@@ -93,13 +100,14 @@ fn start_rtsp_streaming(rtsp_port: u32, udpsink_port: u32, encoder: EncoderType)
     let factory = gst_rtsp_server::RTSPMediaFactory::new();
     factory.set_launch(udpsrc_pipeline.as_str());
     factory.set_shared(true);
-    mounts.add_factory("/ds-video", &factory);
+    mounts.add_factory(&format!("/{}", rtsp_path), &factory);
 
     let _id = server.attach(None).unwrap();
 
     info!(
-        "Stream ready at rtsp://127.0.0.1:{}/ds-video",
-        server.bound_port()
+        "Stream ready at rtsp://127.0.0.1:{}/{}",
+        server.bound_port(),
+        rtsp_path
     );
 
     unsafe {

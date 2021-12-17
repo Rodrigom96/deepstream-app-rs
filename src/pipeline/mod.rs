@@ -30,7 +30,7 @@ impl Pipeline {
         // create elementes
         let streammux = create_streamux().expect("Cant create steamux");
         let filters_bin = filters::create_bin(filters_config)?;
-        let sink = sinks::create_sink_bin(sinks_config).expect("Cant create sink_bin");
+        let sink = sinks::create_sink_bin(sinks_config).unwrap();
         // add elements
         pipeline.add_many(&[&streammux])?;
         pipeline.add(&filters_bin)?;

@@ -49,7 +49,7 @@ RUN cd libs/libnvdsinfer_custom_bbox_tiny_yolo && make && make install
 COPY ./src ./src
 
 # Check code with clippy
-#RUN cargo clippy -- -D warnings
+RUN cargo clippy -- -D warnings
 
 # Build for release
 RUN cargo install --path .

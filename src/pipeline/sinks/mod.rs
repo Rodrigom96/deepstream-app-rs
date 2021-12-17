@@ -17,6 +17,13 @@ pub fn create_sink_bin(config: SinksConfig) -> Result<gst::Bin, Error> {
     bin.add_many(&[&queue, &tee])?;
     queue.link(&tee)?;
 
+    // Add kafka msg broker
+    if let Some(broker_config) = config.msg_broker {
+        let broker = msg_broker::create_bin(Some("kafkamsgbroker_sink"), broker_config)?;
+        bin.add(&broker)?;
+        common::link_element_to_tee_src_pad(&tee, &broker)?;
+    }
+
     // Add filter to proccess images for display
     let display_queue =
         gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
@@ -34,11 +41,6 @@ pub fn create_sink_bin(config: SinksConfig) -> Result<gst::Bin, Error> {
     nvosd.link(&tiler)?;
     tiler.link(&tee_display)?;
 
-    // Add rtsp sink
-    let rtsp_sink = rtsp_sink::create_bin(Some("rtsp_sink"))?;
-    bin.add(&rtsp_sink)?;
-    common::link_element_to_tee_src_pad(&tee_display, &rtsp_sink)?;
-
     // Add display sinks
     if config.display {
         let render_sink = render_sink::create_bin(Some("render_sink"))?;
@@ -46,10 +48,13 @@ pub fn create_sink_bin(config: SinksConfig) -> Result<gst::Bin, Error> {
         common::link_element_to_tee_src_pad(&tee_display, &render_sink)?;
     }
 
-    // Add kafka msg broker
-    let broker = msg_broker::create_bin(Some("kafkamsgbroker_sink"), config.msg_broker)?;
-    bin.add(&broker)?;
-    common::link_element_to_tee_src_pad(&tee, &broker)?;
+    // Add rtsp sink
+    if let Some(rtsp_config) = config.rtsp {
+        let rtsp_sink =
+            rtsp_sink::create_bin(Some("rtsp_sink"), &rtsp_config.path, rtsp_config.port)?;
+        bin.add(&rtsp_sink)?;
+        common::link_element_to_tee_src_pad(&tee_display, &rtsp_sink)?;
+    }
 
     common::add_bin_ghost_pad(&bin, &queue, "sink")?;
     Ok(bin)
