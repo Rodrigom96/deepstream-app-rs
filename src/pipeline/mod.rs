@@ -16,6 +16,7 @@ pub mod sources;
 pub struct Pipeline {
     pipeline: gst::Pipeline,
     streammux: gst::Element,
+    pipeline_sink: sinks::PipelineSink,
 }
 
 impl Pipeline {
@@ -30,23 +31,24 @@ impl Pipeline {
         // create elementes
         let streammux = create_streamux().expect("Cant create steamux");
         let filters_bin = filters::create_bin(filters_config)?;
-        let sink = sinks::create_sink_bin(sinks_config).unwrap();
+        let pipeline_sink = sinks::PipelineSink::new(sinks_config)?;
         // add elements
         pipeline.add_many(&[&streammux])?;
         pipeline.add(&filters_bin)?;
-        pipeline.add(&sink)?;
+        pipeline.add(&pipeline_sink.bin)?;
 
         // link elements
         streammux
             .link(&filters_bin)
             .expect("Failed to link streamux with filters_bin");
         filters_bin
-            .link(&sink)
+            .link(&pipeline_sink.bin)
             .expect("Failed to link filters_bin with sink");
 
         Ok(Pipeline {
             pipeline,
             streammux,
+            pipeline_sink,
         })
     }
 
@@ -61,6 +63,9 @@ impl Pipeline {
             .expect("Cant get streamux sinkpad");
         let srcpad = bin.static_pad("src").expect("Catn get source bin srcpad");
         srcpad.link(&sinkpad)?;
+
+        // Add source rtsp sink
+        self.pipeline_sink.add_source_sink(id)?;
 
         Ok(())
     }

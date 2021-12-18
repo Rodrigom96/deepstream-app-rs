@@ -26,16 +26,9 @@ pub struct MsgBrokerSinkConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct RTSPSinkConfig {
-    pub path: String,
-    pub port: u32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct SinksConfig {
     pub display: bool,
     pub msg_broker: Option<MsgBrokerSinkConfig>,
-    pub rtsp: Option<RTSPSinkConfig>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
