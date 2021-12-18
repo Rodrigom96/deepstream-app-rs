@@ -16,6 +16,3 @@ sinks:
     topic: "ds-meta"
     server: "kafka"
     port: 9092
-  rtsp:
-    path: "video"
-    port: 8554
