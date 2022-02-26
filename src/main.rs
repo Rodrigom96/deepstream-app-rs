@@ -13,13 +13,12 @@ fn main() {
             Err(e) => panic!("Error load pipelin config file, {}", e),
         };
 
-    let pipe;
-    match pipeline::Pipeline::new(pipeline_config.filters, pipeline_config.sinks) {
-        Ok(r) => pipe = r,
+    let pipe = match pipeline::Pipeline::new(pipeline_config.filters, pipeline_config.sinks) {
+        Ok(r) => r,
         Err(e) => {
             panic!("Error! {}", e);
         }
-    }
+    };
 
     load_sources(&pipe, pipeline_config.sources);
 

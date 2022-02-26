@@ -18,7 +18,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Download models
 WORKDIR /models
-RUN wget https://github.com/onnx/models/raw/master/vision/object_detection_segmentation/tiny-yolov2/model/tinyyolov2-8.onnx
+RUN wget https://github.com/onnx/models/raw/main/vision/object_detection_segmentation/tiny-yolov2/model/tinyyolov2-8.onnx
 
 WORKDIR /usr/src/deepstream-rs
 
