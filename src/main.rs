@@ -41,6 +41,10 @@ fn load_sources(pipe: &pipeline::Pipeline, sources_config: Vec<pipeline::config:
             pipeline::config::SourceKind::Uri { uri } => {
                 let src = pipeline::sources::URISource::new(uri).expect("Cant cerate uri source");
                 pipe.add_source(&src, id).expect("Cant add source");
+            },
+            pipeline::config::SourceKind::Rtsp { uri } => {
+                let src = pipeline::sources::RTSPSource::new(uri).expect("Cant create rtsp source");
+                pipe.add_source(&src, id).expect("Cant add source");
             }
         };
     }

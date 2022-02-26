@@ -1,7 +1,7 @@
 sources:
   - id: 0
     kind:
-      Uri:
+      Rtsp:
         uri: "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
 filters:
   - NvInfer:

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum SourceKind {
     Test,
     Uri { uri: String },
+    Rtsp { uri: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -14,8 +15,13 @@ pub struct SourceConfig {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum FilterConfig {
-    NvInfer { config_path: String },
-    Tracker { lib_path: Option<String>, config_path: Option<String> },
+    NvInfer {
+        config_path: String,
+    },
+    Tracker {
+        lib_path: Option<String>,
+        config_path: Option<String>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
