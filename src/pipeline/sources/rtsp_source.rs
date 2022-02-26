@@ -26,8 +26,6 @@ impl RTSPSource {
         rtspsrc.set_property("location", &uri)?;
         rtspsrc.set_property("latency", 100_u32)?;
         rtspsrc.set_property("drop-on-latency", true)?;
-        rtspsrc.set_property("user-id", "admin")?;
-        rtspsrc.set_property("user-pw", "Ogi.1796")?;
 
         // Add elements to bin
         bin.add_many(&[&rtspsrc, &decodebin, &queue])?;
