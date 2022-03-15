@@ -70,6 +70,10 @@ impl Pipeline {
         Ok(())
     }
 
+    pub fn remove_source(&self) -> Result<(), Error> {
+        panic!("Remove source not implemented")
+    }
+
     pub fn run(&self) -> Result<(), Error> {
         let main_loop = glib::MainLoop::new(None, false);
 

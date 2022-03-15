@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Hash)]
 pub enum SourceKind {
     Test,
     Uri { uri: String },
     Rtsp { uri: String },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Hash)]
 pub struct SourceConfig {
     pub id: u8,
     pub kind: SourceKind,
@@ -50,5 +52,13 @@ impl PipelineConfig {
         let config: PipelineConfig = serde_yaml::from_reader(f)?;
 
         Ok(config)
+    }
+}
+
+impl SourceConfig {
+    pub fn get_hash(&self) -> u64 {
+        let mut s = DefaultHasher::new();
+        self.hash(&mut s);
+        s.finish()
     }
 }
