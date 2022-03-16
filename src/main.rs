@@ -8,7 +8,7 @@ mod test;
 fn main() {
     // Init logging
     logging::init();
-    let manger = match pipeline_manager::PipelineManager::new("config/pipeline_config.yml") {
+    let mut manger = match pipeline_manager::PipelineManager::new("config/pipeline_config.yml") {
         Ok(manger) => manger,
         Err(e) => panic!("Error instancing pipeline manager {}", e),
     };

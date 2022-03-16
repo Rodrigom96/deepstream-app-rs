@@ -3,7 +3,7 @@ use super::pipeline::config::{PipelineConfig, SourceConfig};
 use super::pipeline::Pipeline;
 
 use anyhow::Error;
-use log::error;
+use log::{debug, error};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -11,6 +11,7 @@ use std::{thread, time};
 
 pub struct PipelineManager {
     pipeline: Arc<Pipeline>,
+    config_filename: String,
     sources_config_hash: HashMap<u8, u64>,
 }
 
@@ -30,13 +31,11 @@ impl PipelineManager {
 
         let mut manager = PipelineManager {
             pipeline: Arc::new(pipeline),
+            config_filename: filename.to_string(),
             sources_config_hash: HashMap::new(),
         };
 
-        // add sources
-        for src_config in pipeline_config.sources {
-            manager.add_or_update_source(&src_config)?;
-        }
+        manager.update_config()?;
 
         Ok(manager)
     }
@@ -44,7 +43,13 @@ impl PipelineManager {
     pub fn add_or_update_source(&mut self, config: &SourceConfig) -> Result<(), Error> {
         let source_id = config.id;
 
-        if self.sources_config_hash.get(&source_id).is_some() {
+        if let Some(old_config_hash) = self.sources_config_hash.get(&source_id) {
+            // skip if same config
+            if old_config_hash == &config.get_hash() {
+                debug!("Same config of source {}, skip update", source_id);
+                return Ok(());
+            }
+
             // if source alredy exist, remove it
             self.pipeline.remove_source()?;
         }
@@ -73,12 +78,30 @@ impl PipelineManager {
             }
         };
 
-        self.sources_config_hash.insert(source_id, config.get_hash());
+        self.sources_config_hash
+            .insert(source_id, config.get_hash());
 
         Ok(())
     }
 
-    pub fn run(&self) -> Result<(), Error> {
+    pub fn update_config(&mut self) -> Result<(), Error> {
+        // load config file
+        let filename = &self.config_filename;
+        let pipeline_config = match PipelineConfig::from_file(filename) {
+            Ok(pipeline_config) => pipeline_config,
+            Err(e) => panic!("Error load pipelin config file, {}", e),
+        };
+
+        // TODO: delete old sources
+        // add or update sources
+        for src_config in pipeline_config.sources {
+            self.add_or_update_source(&src_config)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn run(&mut self) -> Result<(), Error> {
         // run pipeline in background
         let pipeline = self.pipeline.clone();
         let running = Arc::new(AtomicBool::new(true));
@@ -101,6 +124,9 @@ impl PipelineManager {
             if !running.load(Ordering::Relaxed) {
                 break;
             }
+
+            // sync with config
+            self.update_config()?;
         }
 
         Ok(())
