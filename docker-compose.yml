@@ -10,6 +10,7 @@ services:
             - GST_DEBUG=1
         volumes: 
             - /tmp/.X11-unix/:/tmp/.X11-unix:ro
+            - ./config:/usr/src/deepstream-rs/config:ro
         ports:
             - 8554:8554
         depends_on: 

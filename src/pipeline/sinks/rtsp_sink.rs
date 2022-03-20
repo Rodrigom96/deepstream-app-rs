@@ -128,13 +128,13 @@ impl RTSPDemuxSink {
         Ok(RTSPDemuxSink { bin, streamdemux })
     }
 
-    pub fn add_sink(&self, id: u8) -> Result<(), Error> {
+    pub fn add_sink(&self, id: &u8) -> Result<(), Error> {
         let src_name = format!("src_{}", id);
 
         let sink = create_bin(
             Some(&format!("rtspbin_{}", id)),
             &format!("cam/{}", id),
-            5401 + (id as u32),
+            5401 + (*id as u32),
         )?;
         self.bin.add(&sink)?;
 
