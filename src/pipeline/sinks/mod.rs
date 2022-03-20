@@ -11,7 +11,7 @@ mod rtsp_sink;
 
 pub struct PipelineSink {
     pub bin: gst::Bin,
-    rtsp_demux: rtsp_sink::RTSPDemuxSink,
+    rtsp_demux: Option<rtsp_sink::RTSPDemuxSink>,
 }
 
 impl PipelineSink {
@@ -40,9 +40,16 @@ impl PipelineSink {
         }
 
         // Add rtsp demuxer
-        let rtsp_demux = rtsp_sink::RTSPDemuxSink::new(Some("rtsp_demux"))?;
-        bin.add(&rtsp_demux.bin)?;
-        common::link_element_to_tee_src_pad(&tee, &rtsp_demux.bin)?;
+        let rtsp_demux: Option<rtsp_sink::RTSPDemuxSink> = match config.rtsp {
+            true => {
+                let rtsp_demux = rtsp_sink::RTSPDemuxSink::new(Some("rtsp_demux"))?;
+                bin.add(&rtsp_demux.bin)?;
+                common::link_element_to_tee_src_pad(&tee, &rtsp_demux.bin)?;
+                Some(rtsp_demux)
+            }
+            false => None
+        };
+        
 
         // Add filter to proccess images for display
         let display_queue =
@@ -69,7 +76,9 @@ impl PipelineSink {
     }
 
     pub fn add_source_sink(&self, id: u8) -> Result<(), Error> {
-        self.rtsp_demux.add_sink(id)?;
+        if let Some(rtsp_demux) = &self.rtsp_demux {
+            rtsp_demux.add_sink(id)?;
+        }
 
         Ok(())
     }

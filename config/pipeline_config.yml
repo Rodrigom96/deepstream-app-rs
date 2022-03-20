@@ -12,6 +12,7 @@ filters:
 
 sinks:
   display: true
+  rtsp: false
   msg_broker:
     topic: "ds-meta"
     server: "kafka"

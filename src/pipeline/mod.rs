@@ -3,7 +3,7 @@ use gst::MessageView;
 
 use anyhow::Error;
 
-use log::error;
+use log::{debug, error};
 
 mod common;
 use common::MissingElement;
@@ -67,6 +67,13 @@ impl Pipeline {
         // Add source rtsp sink
         self.pipeline_sink.add_source_sink(id)?;
 
+        // If pipeline is running, set playing to start new source
+        let (_, pipeline_state, _) = self.pipeline.state(None);
+        if pipeline_state == gst::State::Playing {
+            self.pipeline.set_state(gst::State::Playing)?;
+        }
+
+        debug!("Source {} added", id);
         Ok(())
     }
 

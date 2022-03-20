@@ -36,6 +36,7 @@ pub struct MsgBrokerSinkConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SinksConfig {
     pub display: bool,
+    pub rtsp: bool,
     pub msg_broker: Option<MsgBrokerSinkConfig>,
 }
 
