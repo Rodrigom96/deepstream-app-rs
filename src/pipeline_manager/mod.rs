@@ -3,14 +3,12 @@ use super::pipeline::config::{PipelineConfig, SourceConfig};
 use super::pipeline::Pipeline;
 
 use anyhow::Error;
-use log::{debug, error};
+use log::debug;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 use std::{thread, time};
 
 pub struct PipelineManager {
-    pipeline: Arc<Pipeline>,
+    pipeline: Pipeline,
     config_filename: String,
     sources_config_hash: HashMap<u8, u64>,
 }
@@ -30,7 +28,7 @@ impl PipelineManager {
         };
 
         let mut manager = PipelineManager {
-            pipeline: Arc::new(pipeline),
+            pipeline,
             config_filename: filename.to_string(),
             sources_config_hash: HashMap::new(),
         };
@@ -41,9 +39,9 @@ impl PipelineManager {
     }
 
     pub fn add_or_update_source(&mut self, config: &SourceConfig) -> Result<(), Error> {
-        let source_id = config.id;
+        let source_id = &config.id;
 
-        if let Some(old_config_hash) = self.sources_config_hash.get(&source_id) {
+        if let Some(old_config_hash) = self.sources_config_hash.get(source_id) {
             // skip if same config
             if old_config_hash == &config.get_hash() {
                 debug!("Same config of source {}, skip update", source_id);
@@ -51,7 +49,7 @@ impl PipelineManager {
             }
 
             // if source alredy exist, remove it
-            self.pipeline.remove_source()?;
+            self.pipeline.remove_source(source_id)?;
         }
 
         // add source
@@ -79,7 +77,15 @@ impl PipelineManager {
         };
 
         self.sources_config_hash
-            .insert(source_id, config.get_hash());
+            .insert(*source_id, config.get_hash());
+
+        Ok(())
+    }
+
+    pub fn remove_source(&mut self, id: &u8) -> Result<(), Error> {
+        if self.sources_config_hash.remove(id).is_some() {
+            self.pipeline.remove_source(id)?;
+        }
 
         Ok(())
     }
@@ -92,36 +98,41 @@ impl PipelineManager {
             Err(e) => panic!("Error load pipelin config file, {}", e),
         };
 
-        // TODO: delete old sources
         // add or update sources
-        for src_config in pipeline_config.sources {
-            self.add_or_update_source(&src_config)?;
+        for src_config in &pipeline_config.sources {
+            self.add_or_update_source(src_config)?;
+        }
+
+        // delete sources not in config
+        let mut src_id_to_remove = Vec::new();
+        for src_id in self.sources_config_hash.keys() {
+            let mut not_found = true;
+            for src_config in &pipeline_config.sources {
+                if src_id == &(src_config.id) {
+                    not_found = false;
+                    break;
+                }
+            }
+            if not_found {
+                src_id_to_remove.push(src_id.to_owned());
+            }
+        }
+        for src_id in src_id_to_remove.iter() {
+            self.remove_source(src_id)?;
         }
 
         Ok(())
     }
 
     pub fn run(&mut self) -> Result<(), Error> {
-        // run pipeline in background
-        let pipeline = self.pipeline.clone();
-        let running = Arc::new(AtomicBool::new(true));
-        let thread_running = running.clone();
-        thread::spawn(move || match pipeline.run() {
-            Ok(_) => {
-                thread_running.store(false, Ordering::Relaxed);
-            }
-            Err(e) => {
-                error!("Error in pipeline running, {}", e);
-                thread_running.store(false, Ordering::Relaxed);
-            }
-        });
+        // start pipeline
+        self.pipeline.start()?;
 
         let delay = time::Duration::from_secs(10);
         loop {
             thread::sleep(delay);
 
-            // stop loop if pipeline not running
-            if !running.load(Ordering::Relaxed) {
+            if !self.pipeline.is_running() {
                 break;
             }
 

@@ -1,7 +1,9 @@
 use gst::prelude::*;
 use gst::MessageView;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
+use std::collections::HashMap;
+use std::thread;
 
 use log::{debug, error};
 
@@ -17,6 +19,7 @@ pub struct Pipeline {
     pipeline: gst::Pipeline,
     streammux: gst::Element,
     pipeline_sink: sinks::PipelineSink,
+    sources_bin_name: HashMap<u8, String>,
 }
 
 impl Pipeline {
@@ -49,17 +52,22 @@ impl Pipeline {
             pipeline,
             streammux,
             pipeline_sink,
+            sources_bin_name: HashMap::new(),
         })
     }
 
-    pub fn add_source(&self, src: &dyn sources::Source, id: u8) -> Result<(), Error> {
+    pub fn add_source(&mut self, src: &dyn sources::Source, id: &u8) -> Result<(), Error> {
+        if self.sources_bin_name.get(id).is_some() {
+            return Err(anyhow!("Source {} alredy in pipelein", id));
+        }
+
         let bin = src.get_bin();
         self.pipeline.add_many(&[bin])?;
         let sink_name = format!("sink_{}", id);
 
         let sinkpad = self
             .streammux
-            .request_pad_simple(&sink_name[..])
+            .request_pad_simple(&sink_name)
             .expect("Cant get streamux sinkpad");
         let srcpad = bin.static_pad("src").expect("Catn get source bin srcpad");
         srcpad.link(&sinkpad)?;
@@ -73,15 +81,38 @@ impl Pipeline {
             self.pipeline.set_state(gst::State::Playing)?;
         }
 
-        debug!("Source {} added", id);
+        self.sources_bin_name.insert(*id, bin.name().to_string());
+
+        debug!("Source {} added with name {}", id, bin.name());
         Ok(())
     }
 
-    pub fn remove_source(&self) -> Result<(), Error> {
-        panic!("Remove source not implemented")
+    pub fn remove_source(&mut self, id: &u8) -> Result<(), Error> {
+        if let Some(bin_name) = self.sources_bin_name.remove(id) {
+            // get source bin
+            let bin = self.pipeline.by_name(&bin_name).unwrap();
+
+            // stop bin
+            bin.set_state(gst::State::Null)?;
+
+            // unlink source bin from streamux
+            let sink_name = format!("sink_{}", id);
+            let sinkpad = self
+                .streammux
+                .request_pad_simple(&sink_name)
+                .expect("Cant get streamux sinkpad");
+            sinkpad.send_event(gst::event::FlushStop::new(false));
+            self.streammux.release_request_pad(&sinkpad);
+
+            debug!("Source {} removed with name {}", id, bin_name);
+        } else {
+            return Err(anyhow!("Source {} not found", id));
+        }
+
+        Ok(())
     }
 
-    pub fn run(&self) -> Result<(), Error> {
+    pub fn start(&self) -> Result<(), Error> {
         let main_loop = glib::MainLoop::new(None, false);
 
         let bus = self
@@ -114,6 +145,8 @@ impl Pipeline {
                         err.debug()
                     );
                     main_loop.quit();
+                    // stop pipeline on error
+                    pipeline.set_state(gst::State::Null).unwrap();
                 }
                 _ => (),
             }
@@ -121,13 +154,13 @@ impl Pipeline {
 
         self.pipeline.set_state(gst::State::Playing)?;
 
-        main_loop.run();
-
-        self.pipeline.set_state(gst::State::Null)?;
-
-        bus.remove_signal_watch();
-
+        thread::spawn(move || main_loop.run());
         Ok(())
+    }
+
+    pub fn is_running(&self) -> bool {
+        let (_, pipeline_state, _) = self.pipeline.state(None);
+        pipeline_state != gst::State::Null
     }
 }
 

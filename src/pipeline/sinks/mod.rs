@@ -75,7 +75,7 @@ impl PipelineSink {
         Ok(PipelineSink { bin, rtsp_demux })
     }
 
-    pub fn add_source_sink(&self, id: u8) -> Result<(), Error> {
+    pub fn add_source_sink(&self, id: &u8) -> Result<(), Error> {
         if let Some(rtsp_demux) = &self.rtsp_demux {
             rtsp_demux.add_sink(id)?;
         }
