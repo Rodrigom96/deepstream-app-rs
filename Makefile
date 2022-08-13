@@ -4,7 +4,7 @@ COMMAND_TEST = cargo test
 build:
 	docker build -t $(DOCKER_TAG) .
 
-run:
+run: build
 	docker-compose up app
 
 test:

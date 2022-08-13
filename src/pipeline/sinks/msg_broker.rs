@@ -26,7 +26,7 @@ pub fn create_bin(name: Option<&str>, config: MsgBrokerSinkConfig) -> Result<gst
         warn!("nvmsgbroker queue overrun; Older Message Buffer");
         None
     })?;
-    sink.set_property("proto-lib", "/opt/nvidia/deepstream/deepstream-6.0/lib/libnvds_kafka_proto.so")?;
+    sink.set_property("proto-lib", "/opt/nvidia/deepstream/deepstream-6.1/lib/libnvds_kafka_proto.so")?;
     sink.set_property("conn-str", format!("{};{}", config.server, config.port))?;
     sink.set_property("topic", config.topic)?;
     sink.set_property("config", "config/filters/msgbroker_config.txt")?;

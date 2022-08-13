@@ -1,5 +1,5 @@
 CUDA_VER:=11
-NVDS_VERSION:=6.0
+NVDS_VERSION:=6.1
 
 SRCFILES:=nvdsparsebbox_tiny_yolo.cpp
 TARGET_LIB:=libnvdsinfer_custom_bbox_tiny_yolo.so

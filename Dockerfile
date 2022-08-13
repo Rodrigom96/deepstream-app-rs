@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/deepstream:6.0-devel as build
+FROM nvcr.io/nvidia/deepstream:6.1-devel as build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     # rust
@@ -55,13 +55,13 @@ RUN cargo clippy -- -D warnings
 # Build for release
 RUN cargo install --path .
 
-FROM nvcr.io/nvidia/deepstream:6.0-base
+FROM nvcr.io/nvidia/deepstream:6.1-base
 WORKDIR /usr/src/deepstream-rs
 
 RUN apt-get update && apt remove -y gstreamer1.0-plugins-ugly
 
 COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
-COPY --from=build /opt/nvidia/deepstream/deepstream-6.0/lib /opt/nvidia/deepstream/deepstream-6.0/lib
+COPY --from=build /opt/nvidia/deepstream/deepstream-6.1/lib /opt/nvidia/deepstream/deepstream-6.1/lib
 COPY --from=build /models /models
 
 # Copy configurations

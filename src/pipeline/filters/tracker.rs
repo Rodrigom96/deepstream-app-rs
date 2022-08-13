@@ -18,7 +18,7 @@ pub fn create_element(
         Some(ref path) => tracker.set_property("ll-lib-file", path)?,
         _ => tracker.set_property(
             "ll-lib-file",
-            "/opt/nvidia/deepstream/deepstream-6.0/lib/libnvds_nvmultiobjecttracker.so",
+            "/opt/nvidia/deepstream/deepstream-6.1/lib/libnvds_nvmultiobjecttracker.so",
         )?,
     };
     match config_path {
