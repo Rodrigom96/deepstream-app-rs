@@ -3,6 +3,8 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Serialize, Deserialize, Hash)]
+#[serde(rename_all = "camelCase")]
+#[serde(tag = "type")]
 pub enum SourceKind {
     Test,
     Uri { uri: String },
