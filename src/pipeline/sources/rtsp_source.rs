@@ -9,7 +9,7 @@ use super::super::common::MissingElement;
 use super::base_source::Source;
 
 fn pad_add_handler(src: &gst::Element, src_pad: &gst::Pad, sink: &gst::Element) {
-    debug!("Received new pad {} from {}", src_pad.name(), src.name());
+    debug!("Received new pad {} from {} to sink {}", src_pad.name(), src.name(), sink.name());
 
     let sink_pad = sink
         .static_pad("sink")
@@ -101,9 +101,9 @@ impl RTSPSource {
                     (depay, parser)
                 }
                 "H265" => {
-                    let depay = gst::ElementFactory::make("rtph264depay", None)
+                    let depay = gst::ElementFactory::make("rtph265depay", None)
                         .expect("Cant create \"rtph265depay\" element");
-                    let parser = gst::ElementFactory::make("h264parse", None)
+                    let parser = gst::ElementFactory::make("h265parse", None)
                         .expect("Cant create \"h265parse\" element");
                     (depay, parser)
                 }
