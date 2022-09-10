@@ -1,6 +1,7 @@
 use anyhow::Error;
 use gst::prelude::*;
 use log::{debug, error, warn};
+use std::sync::{Arc, Mutex};
 
 use super::super::common;
 use super::super::common::MissingElement;
@@ -8,7 +9,7 @@ use super::super::common::MissingElement;
 use super::base_source::Source;
 
 fn pad_add_handler(src: &gst::Element, src_pad: &gst::Pad, sink: &gst::Element) {
-    debug!("Received new pad {} from {}", src_pad.name(), src.name());
+    debug!("Received new pad {} from {} to sink {}", src_pad.name(), src.name(), sink.name());
 
     let sink_pad = sink
         .static_pad("sink")
@@ -35,6 +36,10 @@ fn pad_add_handler(src: &gst::Element, src_pad: &gst::Pad, sink: &gst::Element) 
     }
 }
 
+struct Decoder {
+    depay: Option<gst::Element>,
+}
+
 pub struct RTSPSource {
     bin: gst::Bin,
 }
@@ -50,6 +55,8 @@ impl RTSPSource {
         let queue =
             gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
 
+        let decoder = Arc::new(Mutex::new(Decoder{depay: None}));
+
         // Config rtspsrc
         rtspsrc.set_property("location", &uri)?;
         rtspsrc.set_property("latency", 100_u32)?;
@@ -62,21 +69,67 @@ impl RTSPSource {
         common::add_bin_ghost_pad(&bin, &queue, "src")?;
 
         // Only select video stream
-        rtspsrc.connect("select-stream", false, |args| {
+        let decoder_clone = decoder.clone();
+        let bin_week = bin.downgrade();
+        let decodebin_week = decodebin.downgrade();
+        rtspsrc.connect("select-stream", false, move |args| {
             let caps = args[2].get::<gst::Caps>().unwrap();
             let caps_struct = caps.structure(0).expect("Failed to get structure of caps.");
-            let is_video = caps_struct.to_string().contains("media=(string)video");
-            Some(is_video.to_value())
+            let media: String = caps_struct
+                .get("media")
+                .expect("error on get struct \"media\"");
+            let encoding_name: String = caps_struct
+                .get("encoding-name")
+                .expect("error on get struct \"encoding-name\"");
+
+            let is_video = media == "video";
+            if !is_video {
+                return Some(false.to_value());
+            }
+
+            let (depay, parser) = match encoding_name.as_str() {
+                "H264" => {
+                    let depay = gst::ElementFactory::make("rtph264depay", None)
+                        .expect("Cant create \"rtph264depay\" element");
+                    let parser = gst::ElementFactory::make("h264parse", None)
+                        .expect("Cant create \"h264parse\" element");
+                    (depay, parser)
+                }
+                "H265" => {
+                    let depay = gst::ElementFactory::make("rtph265depay", None)
+                        .expect("Cant create \"rtph265depay\" element");
+                    let parser = gst::ElementFactory::make("h265parse", None)
+                        .expect("Cant create \"h265parse\" element");
+                    (depay, parser)
+                }
+                _ => {
+                    log::warn!("{} not supported", encoding_name);
+                    return Some(false.to_value())
+                }
+            };
+            // add elements to bin
+            bin_week.upgrade().unwrap().add_many(&[&depay, &parser]).expect("Cant add depay and parser");
+
+            // link elements
+            depay.link(&parser).expect("Cant link depay with parser");
+            let decodebin = decodebin_week.upgrade().unwrap();
+            parser.link(&decodebin).expect("Cant link parser with decodebin");
+
+            // get and lock decoder
+            let mut decoder = decoder_clone.lock().unwrap();
+
+            // sync elements with pipeline
+            depay.sync_state_with_parent().expect("Depay, Cant sync state with parent");
+            parser.sync_state_with_parent().expect("Parser, Cant sync state with parent");
+
+            // store depay on decoder
+            decoder.depay = Some(depay);
+            Some(true.to_value())
         })?;
 
         // Connect the pad-added signal
-        let decodebin_weak = decodebin.downgrade();
         rtspsrc.connect_pad_added(move |src, src_pad| {
-            let decodebin = match decodebin_weak.upgrade() {
-                Some(decodebin) => decodebin,
-                None => return,
-            };
-            pad_add_handler(src, src_pad, &decodebin);
+            pad_add_handler(src, src_pad, decoder.lock().unwrap().depay.as_ref().unwrap());
         });
 
         let queue_weak = queue.downgrade();
