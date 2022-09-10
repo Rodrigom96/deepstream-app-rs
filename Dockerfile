@@ -19,7 +19,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Download models
 WORKDIR /models
-RUN wget https://github.com/onnx/models/raw/main/vision/object_detection_segmentation/tiny-yolov2/model/tinyyolov2-8.onnx
+RUN wget https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.onnx
 
 WORKDIR /usr/src/deepstream-rs
 
@@ -44,7 +44,7 @@ RUN cd gst-plugins/gst-nvobjconv &&\
 # Build custom libs
 COPY libs libs
 RUN cd libs/nvmsgconv && make && make install
-RUN cd libs/libnvdsinfer_custom_bbox_tiny_yolo && make && make install
+RUN cd libs/nvdsinfer_custom_impl_yolox && make && make install
 
 # Copy source code
 COPY ./src ./src

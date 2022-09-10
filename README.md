@@ -27,3 +27,4 @@ make run
 - https://github.com/mdegans/deepstream-5.1
 - https://github.com/alexcrichton/rust-ffi-examples
 - https://github.com/thatbrguy/Deep-Stream-ONNX
+- https://github.com/nanmi/YOLOX-deepstream
