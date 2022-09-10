@@ -72,14 +72,11 @@ impl Pipeline {
         let srcpad = bin.static_pad("src").expect("Catn get source bin srcpad");
         srcpad.link(&sinkpad)?;
 
+        // Start bin
+        bin.sync_state_with_parent()?;
+
         // Add source rtsp sink
         self.pipeline_sink.add_source_sink(id)?;
-
-        // If pipeline is running, set playing to start new source
-        let (_, pipeline_state, _) = self.pipeline.state(None);
-        if pipeline_state == gst::State::Playing {
-            self.pipeline.set_state(gst::State::Playing)?;
-        }
 
         self.sources_bin_name.insert(*id, bin.name().to_string());
 
@@ -99,10 +96,12 @@ impl Pipeline {
             let sink_name = format!("sink_{}", id);
             let sinkpad = self
                 .streammux
-                .request_pad_simple(&sink_name)
+                .static_pad(&sink_name)
                 .expect("Cant get streamux sinkpad");
             sinkpad.send_event(gst::event::FlushStop::new(false));
             self.streammux.release_request_pad(&sinkpad);
+
+            self.pipeline.remove(&bin)?;
 
             debug!("Source {} removed with name {}", id, bin_name);
         } else {
