@@ -50,8 +50,6 @@ impl RTSPSource {
 
         let rtspsrc =
             gst::ElementFactory::make("rtspsrc", None).map_err(|_| MissingElement("rtspsrc"))?;
-        let pre_decode_queue =
-            gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
         let decodebin = gst::ElementFactory::make("decodebin", None)
             .map_err(|_| MissingElement("decodebin"))?;
         let queue =
@@ -65,10 +63,7 @@ impl RTSPSource {
         rtspsrc.set_property("drop-on-latency", true)?;
 
         // Add elements to bin
-        bin.add_many(&[&rtspsrc, &pre_decode_queue, &decodebin, &queue])?;
-
-        
-        pre_decode_queue.link(&decodebin).expect("Cant link parser with decodebin");
+        bin.add_many(&[&rtspsrc, &decodebin, &queue])?;
 
         // Add bin sink ghostpad
         common::add_bin_ghost_pad(&bin, &queue, "src")?;
@@ -76,7 +71,7 @@ impl RTSPSource {
         // Only select video stream
         let decoder_clone = decoder.clone();
         let bin_week = bin.downgrade();
-        let pre_decode_queue_week = pre_decode_queue.downgrade();
+        let decodebin_week = decodebin.downgrade();
         rtspsrc.connect("select-stream", false, move |args| {
             let caps = args[2].get::<gst::Caps>().unwrap();
             let caps_struct = caps.structure(0).expect("Failed to get structure of caps.");
@@ -117,8 +112,8 @@ impl RTSPSource {
 
             // link elements
             depay.link(&parser).expect("Cant link depay with parser");
-            let pre_decode_queue = pre_decode_queue_week.upgrade().unwrap();
-            parser.link(&pre_decode_queue).expect("Cant link parser with pre_decode_queue");
+            let decodebin = decodebin_week.upgrade().unwrap();
+            parser.link(&decodebin).expect("Cant link parser with decodebin");
 
             // get and lock decoder
             let mut decoder = decoder_clone.lock().unwrap();
