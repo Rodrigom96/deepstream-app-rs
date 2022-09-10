@@ -128,9 +128,8 @@ impl RTSPSource {
         })?;
 
         // Connect the pad-added signal
-        let decoder_clone2 = decoder.clone();
         rtspsrc.connect_pad_added(move |src, src_pad| {
-            pad_add_handler(src, src_pad, decoder_clone2.lock().unwrap().depay.as_ref().unwrap());
+            pad_add_handler(src, src_pad, decoder.lock().unwrap().depay.as_ref().unwrap());
         });
 
         let queue_weak = queue.downgrade();
