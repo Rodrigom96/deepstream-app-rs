@@ -86,4 +86,6 @@ impl Source for URISource {
     fn get_bin(&self) -> &gst::Bin {
         &self.bin
     }
+
+    fn on_remove(&mut self) {}
 }
