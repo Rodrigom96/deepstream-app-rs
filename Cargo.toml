@@ -14,6 +14,10 @@ log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8.19"
 state = { version = "0.5.2", features = ["tls"] }
+ds = { path = "deepstream", package = "deepstream" }
+
+[workspace]
+members = ["deepstream", "deepstream-sys", "libs/nvmsgconv"]
 
 [[bin]]
 name = "deepstream-rs"

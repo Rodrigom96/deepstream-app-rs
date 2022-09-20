@@ -54,7 +54,7 @@ fn watch_source_async_state_change(bin: &gst::Bin, ctx: &Arc<Mutex<ReconectionCo
     );
 
     // Bin is still changing state ASYNC. Wait for some more time.
-    if let Some(success) = ret.ok() {
+    if let Ok(success) = ret {
         if success == gst::StateChangeSuccess::Async {
             return true;
         }
@@ -78,29 +78,32 @@ fn watch_source_async_state_change(bin: &gst::Bin, ctx: &Arc<Mutex<ReconectionCo
     // Bin has stopped ASYNC state change but has not gone into
     // PLAYING. Expliclity set state to PLAYING and keep watching
     // state
-    bin.set_state(gst::State::Playing).expect("Error set bin state to playing");
+    bin.set_state(gst::State::Playing)
+        .expect("Error set bin state to playing");
 
     true
 }
 
-fn reset_source_bin(bin: &gst::Bin, ctx: &Arc<Mutex<ReconectionContext>>) {
-    if let Some(err) = bin.set_state(gst::State::Null).err() {
-        gst::element_error!(
-            bin,
-            gst::LibraryError::Failed,
-            ("Cant set source bin state to NULL")
-        );
+fn reset_source_bin(
+    bin: &gst::Bin,
+    ctx: &Arc<Mutex<Contex>>,
+    reconnection_ctx: &Arc<Mutex<ReconectionContext>>,
+) {
+    if bin.set_state(gst::State::Null).is_err() {
+        log::error!("Cant set source bin {} state to NULL", bin.name());
         return;
     }
 
     log::debug!("Resetting source {}", bin.name());
 
-    if let Some(err) = bin.sync_state_with_parent().err() {
-        gst::element_error!(
-            bin,
-            gst::LibraryError::Failed,
-            ("Cant sync state with parent")
-        );
+    if bin.sync_state_with_parent().is_err() {
+        log::error!("Cant sync state with parent of source {}", bin.name());
+    }
+
+    if let Some(parser) = &ctx.lock().unwrap().parser {
+        if !parser.send_event(ds::events::new_stream_reset(0).unwrap()) {
+            log::error!("Interrupted, Reconnection event not sent");
+        }
     }
 
     let (ret, state, pending) = bin.state(gst::ClockTime::ZERO);
@@ -113,31 +116,40 @@ fn reset_source_bin(bin: &gst::Bin, ctx: &Arc<Mutex<ReconectionContext>>) {
         ret
     );
 
-    if let Some(success) = ret.ok() {
+    if let Ok(success) = ret {
         if success == gst::StateChangeSuccess::Async
             || success == gst::StateChangeSuccess::NoPreroll
         {
             let bin_week = bin.downgrade();
-            let ctx_clone = ctx.clone();
+            let reconnection_ctx_clone = reconnection_ctx.clone();
             let timeout_id = glib::timeout_add(std::time::Duration::from_millis(20), move || {
                 let bin = bin_week.upgrade().unwrap();
-                let ret = watch_source_async_state_change(&bin, &ctx_clone);
+                let ret = watch_source_async_state_change(&bin, &reconnection_ctx_clone);
                 glib::Continue(ret)
             });
             {
-                let mut ctx_lock = ctx.lock().unwrap();
-                ctx_lock.async_state_watch_timeout = Some(timeout_id);
+                let mut reconnection_ctx_lock = reconnection_ctx.lock().unwrap();
+                reconnection_ctx_lock.async_state_watch_timeout = Some(timeout_id);
             }
-        }
-        else if success == gst::StateChangeSuccess::Success && state == gst::State::Playing{
-            let mut ctx_lock = ctx.lock().unwrap();
-            ctx_lock.reconecting = false;
+        } else if success == gst::StateChangeSuccess::Success && state == gst::State::Playing {
+            let mut reconnection_ctx_lock = reconnection_ctx.lock().unwrap();
+            reconnection_ctx_lock.reconecting = false;
         }
     };
 }
 
-struct Decoder {
+struct Contex {
     depay: Option<gst::Element>,
+    parser: Option<gst::Element>,
+}
+
+impl Contex {
+    pub fn new() -> Self {
+        Self {
+            depay: None,
+            parser: None,
+        }
+    }
 }
 
 struct ReconectionContext {
@@ -145,6 +157,7 @@ struct ReconectionContext {
     last_reset_time: Instant,
     started: bool,
     reconecting: bool,
+    last_reconnect_time: Instant,
     have_eos: bool,
     async_state_watch_timeout: Option<glib::SourceId>,
 }
@@ -155,6 +168,7 @@ impl ReconectionContext {
         let last_reset_time = Instant::now();
         let started = false;
         let reconecting = false;
+        let last_reconnect_time = Instant::now();
         let have_eos = false;
 
         Self {
@@ -162,6 +176,7 @@ impl ReconectionContext {
             last_reset_time,
             started,
             reconecting,
+            last_reconnect_time,
             have_eos,
             async_state_watch_timeout: None,
         }
@@ -185,8 +200,8 @@ impl RTSPSource {
         let queue =
             gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
 
+        let ctx = Arc::new(Mutex::new(Contex::new()));
         let reconnection_ctx = Arc::new(Mutex::new(ReconectionContext::new()));
-        let decoder = Arc::new(Mutex::new(Decoder { depay: None }));
 
         // Config rtspsrc
         rtspsrc.set_property("location", &uri)?;
@@ -200,7 +215,7 @@ impl RTSPSource {
         common::add_bin_ghost_pad(&bin, &queue, "src")?;
 
         // Only select video stream
-        let decoder_clone = decoder.clone();
+        let ctx_clone = ctx.clone();
         let bin_week = bin.downgrade();
         let decodebin_week = decodebin.downgrade();
         rtspsrc.connect("select-stream", false, move |args| {
@@ -219,10 +234,10 @@ impl RTSPSource {
             }
 
             // get and lock decoder
-            let mut decoder = decoder_clone.lock().unwrap();
+            let mut ctx = ctx_clone.lock().unwrap();
 
             // Create and add depay and parser if not created yet
-            if decoder.depay.is_none() {
+            if ctx.depay.is_none() {
                 let (depay, parser) = match encoding_name.as_str() {
                     "H264" => {
                         let depay = gst::ElementFactory::make("rtph264depay", None)
@@ -266,13 +281,15 @@ impl RTSPSource {
                     .expect("Parser, Cant sync state with parent");
 
                 // store depay on decoder
-                decoder.depay = Some(depay);
+                ctx.depay = Some(depay);
+                ctx.parser = Some(parser);
             }
             Some(true.to_value())
         })?;
 
         // Connect the pad-added signal
         //let bin_week = bin.downgrade();
+        let ctx_clone = ctx.clone();
         let reconection_ctx_clone = reconnection_ctx.clone();
         rtspsrc.connect_pad_added(move |src, src_pad| {
             let reconection_ctx_clone2 = reconection_ctx_clone.clone();
@@ -285,7 +302,7 @@ impl RTSPSource {
                 move |_, info| {
                     //let bin = bin_week.upgrade().unwrap();
 
-                    match info.data {
+                    match &info.data {
                         Some(gst::PadProbeData::Buffer(_)) => {
                             {
                                 let mut ctx = reconection_ctx_clone2.lock().unwrap();
@@ -294,12 +311,13 @@ impl RTSPSource {
                             }
                             //log::debug!("Update buffer");
                         }
-                        Some(gst::PadProbeData::Event(_)) => {
-                            {
+                        Some(gst::PadProbeData::Event(event)) => {
+                            let t = event.type_();
+                            if t == gst::EventType::Eos {
                                 let mut ctx = reconection_ctx_clone2.lock().unwrap();
                                 ctx.have_eos = true;
+                                log::debug!("prob EOS");
                             }
-                            log::debug!("prob EOS");
                         }
                         _ => {}
                     };
@@ -310,7 +328,7 @@ impl RTSPSource {
             pad_add_handler(
                 src,
                 src_pad,
-                decoder.lock().unwrap().depay.as_ref().unwrap(),
+                ctx_clone.lock().unwrap().depay.as_ref().unwrap(),
             );
         });
 
@@ -328,24 +346,39 @@ impl RTSPSource {
         let source_watch_timeout = Some(glib::timeout_add(
             std::time::Duration::from_secs(1),
             move || {
+                let bin = bin_week.upgrade().unwrap();
                 let reset_requierd = {
-                    let ctx = reconnection_ctx_clone.lock().unwrap();
-                    let update_elapsed = ctx.last_buffer_update.elapsed();
-                    let reset_elapsed = ctx.last_reset_time.elapsed();
-                    !ctx.reconecting
-                        && ctx.started
+                    let reconnection_ctx = reconnection_ctx_clone.lock().unwrap();
+                    let update_elapsed = reconnection_ctx.last_buffer_update.elapsed();
+                    let reset_elapsed = reconnection_ctx.last_reset_time.elapsed();
+
+                    if reconnection_ctx.reconecting {
+                        if reconnection_ctx.last_reconnect_time.elapsed() >= Duration::from_secs(30)
+                        {
+                            log::warn!("Reconect failed from source {}, trying again", bin.name());
+                            true
+                        } else {
+                            false
+                        }
+                    } else if reconnection_ctx.started
                         && update_elapsed >= Duration::from_secs(10)
                         && reset_elapsed >= Duration::from_secs(10)
+                    {
+                        log::warn!("No data from source {}, trying reconect", bin.name());
+                        true
+                    } else {
+                        false
+                    }
                 };
 
                 if reset_requierd {
                     log::debug!("Reset source");
                     {
-                        let mut ctx = reconnection_ctx_clone.lock().unwrap();
-                        ctx.reconecting = true;
+                        let mut reconnection_ctx = reconnection_ctx_clone.lock().unwrap();
+                        reconnection_ctx.reconecting = true;
+                        reconnection_ctx.last_reconnect_time = Instant::now();
                     }
-                    let bin = bin_week.upgrade().unwrap();
-                    reset_source_bin(&bin, &reconnection_ctx_clone);
+                    reset_source_bin(&bin, &ctx, &reconnection_ctx_clone);
                 }
 
                 glib::Continue(true)

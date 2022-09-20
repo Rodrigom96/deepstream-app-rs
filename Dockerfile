@@ -24,6 +24,9 @@ RUN wget https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc
 WORKDIR /usr/src/deepstream-rs
 
 # Copy our manifests
+COPY libs libs
+COPY deepstream-sys deepstream-sys
+COPY deepstream deepstream
 COPY dummy.rs .
 COPY Cargo.toml .
 
@@ -42,7 +45,6 @@ RUN cd gst-plugins/gst-nvobjconv &&\
     make install
 
 # Build custom libs
-COPY libs libs
 RUN cd libs/nvmsgconv && make && make install
 RUN cd libs/nvdsinfer_custom_impl_yolox && make && make install
 
@@ -56,6 +58,9 @@ RUN cargo clippy -- -D warnings
 RUN cargo install --path .
 
 FROM nvcr.io/nvidia/deepstream:6.1-base
+
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/nvidia/deepstream/deepstream/lib"
+
 WORKDIR /usr/src/deepstream-rs
 
 RUN apt-get update && apt remove -y gstreamer1.0-plugins-ugly
