@@ -10,7 +10,7 @@ $(TARGET_LIB) :
 	cargo build --release
 
 install: $(TARGET_LIB)
-	cp -rv target/release/$(TARGET_LIB) $(LIB_INSTALL_DIR)
+	cp -rv ../../target/release/$(TARGET_LIB) $(LIB_INSTALL_DIR)
 
 clean:
 	rm -rf $(TARGET_LIB)

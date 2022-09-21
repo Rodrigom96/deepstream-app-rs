@@ -8,6 +8,7 @@ services:
             - MY_LOG_LEVEL=debug
             - MY_LOG_STYLE=always
             - GST_DEBUG=1
+        tty: true
         volumes: 
             - /tmp/.X11-unix/:/tmp/.X11-unix:ro
             - ./config:/usr/src/deepstream-rs/config:ro
