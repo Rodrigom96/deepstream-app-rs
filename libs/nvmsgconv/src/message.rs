@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::ffi::CStr;
 use std::str;
 
-use super::nvdsmeta_custom_schema::NvDsEvent;
+use deepstream_sys::nvdsmeta_schema::NvDsEvent;
 
 #[derive(Serialize, Deserialize)]
 struct Camera {

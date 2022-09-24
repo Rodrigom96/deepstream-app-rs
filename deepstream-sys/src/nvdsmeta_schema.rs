@@ -1,5 +1,3 @@
-use glib_sys as glib;
-
 #[allow(unused_imports)]
 use libc::{
     c_char, c_double, c_float, c_int, c_long, c_short, c_uchar, c_uint, c_ulong, c_ushort, c_void,
@@ -7,7 +5,7 @@ use libc::{
 };
 
 #[allow(unused_imports)]
-use glib::{gboolean, gconstpointer, gpointer, GType};
+use glib_sys::{gboolean, gconstpointer, gpointer, GType};
 
 #[repr(C)]
 pub enum NvDsEventType {

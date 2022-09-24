@@ -1,4 +1,5 @@
 pub mod events;
+pub mod gst_meta;
 
 #[cfg(test)]
 mod tests {
