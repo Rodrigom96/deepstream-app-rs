@@ -1,10 +1,19 @@
 use gst::glib;
 use gst::subclass::prelude::ObjectSubclass;
 use gst_base::subclass::prelude::{BaseTransformImpl, ElementImpl, ObjectImpl};
+//use gst::{gst_debug, gst_error, gst_info};
 
 use once_cell::sync::Lazy;
 
 use deepstream::gst_meta::{DsMeta, GstNvDsMetaType};
+
+static CAT: Lazy<gst::DebugCategory> = Lazy::new(|| {
+    gst::DebugCategory::new(
+        "nvobjconv",
+        gst::DebugColorFlags::empty(),
+        Some("Transforms buffer objects to meta"),
+    )
+});
 
 #[derive(Default)]
 pub struct NVObjconv {}
@@ -58,24 +67,23 @@ impl ElementImpl for NVObjconv {
 
         PAD_TEMPLATES.as_ref()
     }
-
 }
 
 impl BaseTransformImpl for NVObjconv {
     const MODE: gst_base::subclass::BaseTransformMode =
-        gst_base::subclass::BaseTransformMode::NeverInPlace;
+        gst_base::subclass::BaseTransformMode::AlwaysInPlace;
     const PASSTHROUGH_ON_SAME_CAPS: bool = false;
     const TRANSFORM_IP_ON_PASSTHROUGH: bool = false;
-    
 
     fn transform_ip(
         &self,
         _element: &Self::Type,
         buf: &mut gst::BufferRef,
     ) -> Result<gst::FlowSuccess, gst::FlowError> {
-        for meta in buf.iter_meta::<DsMeta>(){
-            if let GstNvDsMetaType::BatchGstMeta =  meta.meta_type() {
-
+        for meta in buf.iter_meta::<DsMeta>() {
+            println!("Meta: {:?}", meta);
+            if let GstNvDsMetaType::BatchGstMeta = meta.meta_type() {
+                println!("GstNvDsMetaType: {:?}", meta);
             }
         }
         Ok(gst::FlowSuccess::Ok)

@@ -3,6 +3,7 @@ use gstreamer::meta::MetaAPI;
 
 use deepstream_sys::gst_nvdsmeta as ffi;
 
+#[derive(Debug)]
 pub enum GstNvDsMetaType {
     #[doc(alias = "NVDS_GST_INVALID_META")]
     Invalid,
@@ -70,5 +71,13 @@ unsafe impl MetaAPI for DsMeta {
     #[doc(alias = "nvds_meta_api_get_type")]
     fn meta_api() -> gstreamer::glib::Type {
         unsafe { from_glib(ffi::nvds_meta_api_get_type()) }
+    }
+}
+
+impl std::fmt::Debug for DsMeta {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("DsMeta")
+            .field("meta_type", &self.meta_type())
+            .finish()
     }
 }

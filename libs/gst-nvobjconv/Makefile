@@ -1,6 +1,6 @@
 NVDS_VERSION:=6.1
 
-LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
+LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugins/
 
 TARGET_LIB:= libgstnvobjconv.so
 
