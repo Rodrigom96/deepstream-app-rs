@@ -17,7 +17,7 @@ pub type GstNvDsMetaType = c_int;
 pub const NVDS_GST_INVALID_META: GstNvDsMetaType = -1;
 pub const NVDS_BATCH_GST_META: GstNvDsMetaType = nvdsmeta::NVDS_GST_CUSTOM_META + 1;
 pub const NVDS_DECODER_GST_META: GstNvDsMetaType = NVDS_BATCH_GST_META + 1;
-pub const NVDS_DEWARPER_GST_META: GstNvDsMetaType = NVDS_BATCH_GST_META + 1;
+pub const NVDS_DEWARPER_GST_META: GstNvDsMetaType = NVDS_DECODER_GST_META + 1;
 pub const NVDS_RESERVED_GST_META: GstNvDsMetaType = nvdsmeta::NVDS_GST_CUSTOM_META + 4096;
 pub const NVDS_GST_META_FORCE32: GstNvDsMetaType = 0x7FFFFFFF;
 
@@ -28,6 +28,7 @@ pub type NvDsMetaReleaseFunc = gpointer;
 pub struct NvDsMeta {
     pub meta: GstMeta,
     pub meta_data: gpointer,
+    pub user_data: gpointer,
     pub meta_type: c_int,
     pub copyfunc: NvDsMetaCopyFunc,
     pub freefunc: NvDsMetaReleaseFunc,
