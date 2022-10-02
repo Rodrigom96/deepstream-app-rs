@@ -82,7 +82,14 @@ impl BaseTransformImpl for NVObjconv {
     ) -> Result<gst::FlowSuccess, gst::FlowError> {
         for mut meta in buf.iter_meta_mut::<DsMeta>() {
             if let GstNvDsMetaType::BatchGstMeta = meta.meta_type() {
-                println!("BatchNeta: {:?}", meta.batch_meta());
+                let mut batch_meta = meta.batch_meta().unwrap();
+                println!("BatchNeta: {:?}", batch_meta);
+                for mut frame in batch_meta.iter_frame() {
+                    println!("Frame: {:?}", frame);
+                    for mut obj in frame.iter_objects() {
+                        println!("Obj: {:?}", obj);
+                    }
+                }
             }
         }
         Ok(gst::FlowSuccess::Ok)
