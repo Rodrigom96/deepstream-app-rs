@@ -9,7 +9,7 @@ use gst_sys::GstMeta;
 
 use crate::nvdsmeta;
 
-extern  "C" {
+extern "C" {
     pub fn nvds_meta_api_get_type() -> GType;
 }
 
@@ -21,17 +21,14 @@ pub const NVDS_DEWARPER_GST_META: GstNvDsMetaType = NVDS_DECODER_GST_META + 1;
 pub const NVDS_RESERVED_GST_META: GstNvDsMetaType = nvdsmeta::NVDS_GST_CUSTOM_META + 4096;
 pub const NVDS_GST_META_FORCE32: GstNvDsMetaType = 0x7FFFFFFF;
 
-pub type NvDsMetaCopyFunc = gpointer;
-pub type NvDsMetaReleaseFunc = gpointer;
-
 #[repr(C)]
 pub struct NvDsMeta {
     pub meta: GstMeta,
     pub meta_data: gpointer,
     pub user_data: gpointer,
     pub meta_type: c_int,
-    pub copyfunc: NvDsMetaCopyFunc,
-    pub freefunc: NvDsMetaReleaseFunc,
-    pub gst_to_nvds_meta_transform_func: NvDsMetaCopyFunc,
-    pub gst_to_nvds_meta_release_func: NvDsMetaReleaseFunc,
+    pub copyfunc: nvdsmeta::NvDsMetaCopyFunc,
+    pub freefunc: nvdsmeta::NvDsMetaReleaseFunc,
+    pub gst_to_nvds_meta_transform_func: nvdsmeta::NvDsMetaCopyFunc,
+    pub gst_to_nvds_meta_release_func: nvdsmeta::NvDsMetaReleaseFunc,
 }

@@ -3,6 +3,8 @@ use gstreamer::meta::MetaAPI;
 
 use deepstream_sys::gst_nvdsmeta as ffi;
 
+use crate::meta::NvDsBatchMeta;
+
 #[derive(Debug)]
 pub enum GstNvDsMetaType {
     #[doc(alias = "NVDS_GST_INVALID_META")]
@@ -59,6 +61,14 @@ pub struct DsMeta(ffi::NvDsMeta);
 impl DsMeta {
     pub fn meta_type(&self) -> GstNvDsMetaType {
         unsafe { from_glib(self.0.meta_type) }
+    }
+
+    pub fn batch_meta(&mut self) -> Option<&mut NvDsBatchMeta> {
+        if let GstNvDsMetaType::BatchGstMeta = self.meta_type() {
+            unsafe { Some(NvDsBatchMeta::from_ptr(self.0.meta_data)) }
+        } else {
+            None
+        }
     }
 }
 
