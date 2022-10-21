@@ -6,6 +6,7 @@ use gst_base::subclass::prelude::{BaseTransformImpl, ElementImpl, ObjectImpl};
 use once_cell::sync::Lazy;
 
 use deepstream::gst_meta::{DsMeta, GstNvDsMetaType};
+use deepstream::meta_schema::{NvDsEventMsgMeta, NvDsRect};
 
 static CAT: Lazy<gst::DebugCategory> = Lazy::new(|| {
     gst::DebugCategory::new(
@@ -83,11 +84,27 @@ impl BaseTransformImpl for NVObjconv {
         for mut meta in buf.iter_meta_mut::<DsMeta>() {
             if let GstNvDsMetaType::BatchGstMeta = meta.meta_type() {
                 let mut batch_meta = meta.batch_meta().unwrap();
-                println!("BatchNeta: {:?}", batch_meta);
                 for mut frame in batch_meta.iter_frame() {
-                    println!("Frame: {:?}", frame);
                     for mut obj in frame.iter_objects() {
                         println!("Obj: {:?}", obj);
+
+                        let msg_meta = NvDsEventMsgMeta::new(
+                            NvDsRect::new(
+                                obj.rect_params().top,
+                                obj.rect_params().left, 
+                                obj.rect_params().width,
+                                obj.rect_params().height
+                            ),
+                            obj.class_id(),
+                            obj.obj_label(),
+                            frame.source_id().try_into().unwrap(),
+                            frame.frame_number(),
+                            f64::from(obj.confidence()),
+                            obj.object_id().try_into().unwrap(),
+                            "".to_string()
+                        );
+
+                        println!("Msg Meta: {:?}", msg_meta);
                     }
                 }
             }

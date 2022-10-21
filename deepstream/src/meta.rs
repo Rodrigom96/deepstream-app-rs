@@ -1,6 +1,8 @@
-use libc::c_void;
+use libc::{c_void, c_char};
+use std::ffi::CStr;
 use std::marker::PhantomData;
 
+use deepstream_sys::nvds_roi_meta::NvOSD_RectParams;
 use deepstream_sys::nvdsmeta as ffi;
 
 #[repr(transparent)]
@@ -14,12 +16,33 @@ impl NvDsObjectMeta {
     pub fn class_id(&self) -> i32 {
         self.0.class_id
     }
+
+    pub fn obj_label(&self) -> String {
+        let c_str: &CStr = unsafe { CStr::from_ptr(&self.0.obj_label as *const c_char) };
+        let str_slice: &str = c_str.to_str().unwrap();
+        str_slice.to_owned()
+    }
+
+    pub fn object_id(&self) -> u64 {
+        self.0.object_id
+    }
+
+    pub fn rect_params(&self) -> &NvOSD_RectParams {
+        &self.0.rect_params
+    }
+
+    pub fn confidence(&self) -> f32 {
+        self.0.confidence
+    }
 }
 
 impl std::fmt::Debug for NvDsObjectMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("NvDsObjectMeta")
             .field("class_id", &self.class_id())
+            .field("obj_label", &self.obj_label())
+            .field("object_id", &self.object_id())
+            .field("confidence", &self.confidence())
             .finish()
     }
 }
@@ -64,7 +87,7 @@ impl NvDsFrameMeta {
         &mut *(ptr as *mut Self)
     }
 
-    pub fn frame_num(&self) -> i32 {
+    pub fn frame_number(&self) -> i32 {
         self.0.frame_num
     }
 
@@ -80,7 +103,7 @@ impl NvDsFrameMeta {
 impl std::fmt::Debug for NvDsFrameMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("NvDsFrameMeta")
-            .field("frame_num", &self.frame_num())
+            .field("frame_number", &self.frame_number())
             .field("source_id", &self.source_id())
             .finish()
     }
