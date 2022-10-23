@@ -1,9 +1,11 @@
-use libc::{c_void, c_char};
+use libc::{c_char, c_void};
 use std::ffi::CStr;
 use std::marker::PhantomData;
 
 use deepstream_sys::nvds_roi_meta::NvOSD_RectParams;
 use deepstream_sys::nvdsmeta as ffi;
+
+use crate::meta_schema::NvDsEventMsgMeta;
 
 #[repr(transparent)]
 pub struct NvDsObjectMeta(ffi::NvDsObjectMeta);
@@ -17,10 +19,12 @@ impl NvDsObjectMeta {
         self.0.class_id
     }
 
-    pub fn obj_label(&self) -> String {
-        let c_str: &CStr = unsafe { CStr::from_ptr(&self.0.obj_label as *const c_char) };
-        let str_slice: &str = c_str.to_str().unwrap();
-        str_slice.to_owned()
+    pub fn obj_label(&self) -> &str {
+        unsafe {
+            CStr::from_ptr(&self.0.obj_label as *const c_char)
+                .to_str()
+                .unwrap()
+        }
     }
 
     pub fn object_id(&self) -> u64 {
@@ -83,6 +87,10 @@ impl<'a> Iterator for NvDsObjectMetaIter<'a> {
 pub struct NvDsFrameMeta(ffi::NvDsFrameMeta);
 
 impl NvDsFrameMeta {
+    pub fn as_mut_ptr(&self) -> *mut ffi::NvDsFrameMeta {
+        self as *const Self as *mut ffi::NvDsFrameMeta
+    }
+
     pub unsafe fn from_ptr<'a>(ptr: *mut ffi::NvDsFrameMeta) -> &'a mut Self {
         &mut *(ptr as *mut Self)
     }
@@ -97,6 +105,15 @@ impl NvDsFrameMeta {
 
     pub fn iter_objects<'a>(&mut self) -> NvDsObjectMetaIter<'a> {
         NvDsObjectMetaIter::new(self.0.obj_meta_list)
+    }
+
+    #[doc(alias = "nvds_add_user_meta_to_frame")]
+    pub fn add_user_meta<T>(&mut self, user_meta: &NvDsUserMeta<T>) {
+        unsafe {
+            let frame_ptr = self.as_mut_ptr();
+            let user_meta_ptr = user_meta.as_mut_ptr();
+            ffi::nvds_add_user_meta_to_frame(frame_ptr, user_meta_ptr)
+        }
     }
 }
 
@@ -142,6 +159,69 @@ impl<'a> Iterator for NvDsFrameMetaIter<'a> {
 }
 
 #[repr(transparent)]
+pub struct NvDsBaseMeta(ffi::NvDsBaseMeta);
+
+impl NvDsBaseMeta {
+    pub unsafe fn from_ptr<'a>(ptr: *mut ffi::NvDsBaseMeta) -> &'a mut Self {
+        &mut *(ptr as *mut Self)
+    }
+}
+
+impl std::fmt::Debug for NvDsBaseMeta {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("NvDsBaseMeta")
+            .field("meta_type", &self.0.meta_type)
+            .finish()
+    }
+}
+
+#[repr(transparent)]
+pub struct NvDsUserMeta<T>(ffi::NvDsUserMeta, PhantomData<T>);
+
+impl<T> NvDsUserMeta<T> {
+    pub fn as_mut_ptr(&self) -> *mut ffi::NvDsUserMeta {
+        self as *const Self as *mut ffi::NvDsUserMeta
+    }
+
+    pub fn base_meta<'a>(&self) -> &'a NvDsBaseMeta {
+        unsafe {
+            let ptr = &self.0.base_meta as *const ffi::NvDsBaseMeta as *mut ffi::NvDsBaseMeta;
+            NvDsBaseMeta::from_ptr::<'a>(ptr)
+        }
+    }
+}
+
+impl NvDsUserMeta<crate::meta_schema::NvDsEventMsgMeta> {
+    pub fn set_data(&mut self, data: crate::meta_schema::NvDsEventMsgMeta) {
+        self.0.user_meta_data = data.as_mut_ptr() as *mut c_void;
+        self.0.base_meta.meta_type = ffi::NVDS_EVENT_MSG_META;
+
+        /*
+        self.0.base_meta.copy_func = |data, user_data| {
+            let user_meta = data as *mut ffi::NvDsUserMeta;
+            let src_meta = user_meta.user_meta_data as *mut NvDsEventMsgMeta;
+            let src_meta_bbox = src_meta.bbox();
+
+            unsafe {
+                let dst_meta = NvDsEventMsgMeta::new(
+                    crate::meta_schema::NvDsRect::new(
+                        src_meta_bbox.top(), left, width, height),
+                    obj_class_id, obj_class_label, sensor_id, frame_id, confidence, tracking_id, ts)
+            }
+        }
+        */
+    }
+}
+
+impl<T> std::fmt::Debug for NvDsUserMeta<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.debug_struct("NvDsUserMeta")
+            .field("base_meta", self.base_meta())
+            .finish()
+    }
+}
+
+#[repr(transparent)]
 pub struct NvDsBatchMeta(ffi::NvDsBatchMeta);
 
 impl NvDsBatchMeta {
@@ -149,15 +229,36 @@ impl NvDsBatchMeta {
         &mut *(ptr as *mut Self)
     }
 
+    pub fn as_mut_ptr(&self) -> *mut ffi::NvDsBatchMeta {
+        self as *const Self as *mut ffi::NvDsBatchMeta
+    }
+
+    pub fn base_meta<'a>(&self) -> &'a NvDsBaseMeta {
+        unsafe {
+            let ptr = &self.0.base_meta as *const ffi::NvDsBaseMeta as *mut ffi::NvDsBaseMeta;
+            NvDsBaseMeta::from_ptr::<'a>(ptr)
+        }
+    }
+
     pub fn iter_frame<'a>(&mut self) -> NvDsFrameMetaIter<'a> {
         NvDsFrameMetaIter::new(self.0.frame_meta_list)
+    }
+
+    #[doc(alias = "nvds_acquire_user_meta_from_pool")]
+    pub fn acquire_user_meta<T>(&mut self) -> &mut NvDsUserMeta<T> {
+        unsafe {
+            let ptr = self.as_mut_ptr();
+            let user_meta_ptr = ffi::nvds_acquire_user_meta_from_pool(ptr) as *mut NvDsUserMeta<T>;
+
+            &mut *user_meta_ptr
+        }
     }
 }
 
 impl std::fmt::Debug for NvDsBatchMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("NvDsBatchMeta")
-            .field("meta_type", &self.0.base_meta.meta_type)
+            .field("base_meta", self.base_meta())
             .finish()
     }
 }

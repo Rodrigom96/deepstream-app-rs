@@ -96,15 +96,23 @@ impl BaseTransformImpl for NVObjconv {
                                 obj.rect_params().height
                             ),
                             obj.class_id(),
-                            obj.obj_label(),
+                            obj.obj_label().to_owned(),
                             frame.source_id().try_into().unwrap(),
                             frame.frame_number(),
                             f64::from(obj.confidence()),
                             obj.object_id().try_into().unwrap(),
-                            "".to_string()
+                            "ts".to_string()
                         );
 
                         println!("Msg Meta: {:?}", msg_meta);
+
+                        let mut user_meta = batch_meta.acquire_user_meta::<NvDsEventMsgMeta>();
+                        
+                        user_meta.set_data(msg_meta);
+
+                        println!("User Meta: {:?}", user_meta);
+
+                        frame.add_user_meta(user_meta);
                     }
                 }
             }

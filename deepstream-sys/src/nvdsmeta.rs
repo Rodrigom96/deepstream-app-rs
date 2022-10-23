@@ -22,8 +22,8 @@ pub type NvDsLabelInfoList = GList;
 pub type NvDsMetaList = GList;
 pub type NvDsElementMeta = c_void;
 
-pub type NvDsMetaCopyFunc = gpointer;
-pub type NvDsMetaReleaseFunc = gpointer;
+pub type NvDsMetaCopyFunc = fn(data: gpointer, user_data: gpointer) -> gpointer;
+pub type NvDsMetaReleaseFunc = fn(data: gpointer, user_data: gpointer);
 
 pub type NvDsMetaType = c_int;
 pub const NVDS_INVALID_META: NvDsMetaType = -1;
@@ -134,4 +134,18 @@ pub struct NvDsObjectMeta {
     pub obj_user_meta_list: *mut NvDsUserMetaList,
     pub misc_obj_info: [c_long; MAX_USER_FIELDS],
     pub reserved: [c_long; MAX_RESERVED_FIELDS],
+}
+
+#[repr(C)]
+pub struct NvDsUserMeta {
+    pub base_meta: NvDsBaseMeta,
+    pub user_meta_data: *mut c_void,
+}
+
+extern "C" {
+    pub fn nvds_add_user_meta_to_frame(
+        frame_meta: *mut NvDsFrameMeta,
+        user_meta: *mut NvDsUserMeta,
+    );
+    pub fn nvds_acquire_user_meta_from_pool(batch_meta: *mut NvDsBatchMeta) -> *mut NvDsUserMeta;
 }
