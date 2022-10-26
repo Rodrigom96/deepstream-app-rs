@@ -22,8 +22,8 @@ pub type NvDsLabelInfoList = GList;
 pub type NvDsMetaList = GList;
 pub type NvDsElementMeta = c_void;
 
-pub type NvDsMetaCopyFunc = fn(data: gpointer, user_data: gpointer) -> gpointer;
-pub type NvDsMetaReleaseFunc = fn(data: gpointer, user_data: gpointer);
+pub type NvDsMetaCopyFunc = Option<unsafe extern "C" fn(data: gpointer, user_data: gpointer) -> gpointer>;
+pub type NvDsMetaReleaseFunc = Option<unsafe extern "C" fn(data: gpointer, user_data: gpointer)>;
 
 pub type NvDsMetaType = c_int;
 pub const NVDS_INVALID_META: NvDsMetaType = -1;
@@ -60,7 +60,7 @@ pub struct NvDsMetaPool {
     pub empty_list: *mut NvDsMetaList,
     pub full_list: *mut NvDsMetaList,
     pub copy_func: NvDsMetaCopyFunc,
-    pub release_func: NvDsMetaReleaseFunc,
+    pub release_func: Option<NvDsMetaReleaseFunc>,
 }
 
 #[repr(C)]

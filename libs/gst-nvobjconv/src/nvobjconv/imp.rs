@@ -91,23 +91,23 @@ impl BaseTransformImpl for NVObjconv {
                         let msg_meta = NvDsEventMsgMeta::new(
                             NvDsRect::new(
                                 obj.rect_params().top,
-                                obj.rect_params().left, 
+                                obj.rect_params().left,
                                 obj.rect_params().width,
-                                obj.rect_params().height
+                                obj.rect_params().height,
                             ),
                             obj.class_id(),
-                            obj.obj_label().to_owned(),
+                            obj.obj_label(),
                             frame.source_id().try_into().unwrap(),
                             frame.frame_number(),
                             f64::from(obj.confidence()),
                             obj.object_id().try_into().unwrap(),
-                            "ts".to_string()
+                            "ts",
                         );
 
                         println!("Msg Meta: {:?}", msg_meta);
 
                         let mut user_meta = batch_meta.acquire_user_meta::<NvDsEventMsgMeta>();
-                        
+
                         user_meta.set_data(msg_meta);
 
                         println!("User Meta: {:?}", user_meta);

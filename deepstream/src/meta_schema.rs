@@ -42,6 +42,12 @@ impl From<NvDsRect> for ffi::NvDsRect {
     }
 }
 
+impl Clone for NvDsRect {
+    fn clone(&self) -> Self {
+        unsafe { Self(std::ptr::read(&self.0)) }
+    }
+}
+
 impl std::fmt::Debug for NvDsRect {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("NvDsRect")
@@ -68,12 +74,12 @@ impl NvDsEventMsgMeta {
     pub fn new(
         bbox: NvDsRect,
         obj_class_id: i32,
-        obj_class_label: String,
+        obj_class_label: &str,
         sensor_id: i32,
         frame_id: i32,
         confidence: f64,
         tracking_id: i32,
-        ts: String,
+        ts: &str,
     ) -> Self {
         let label_c_chars = CString::new(obj_class_label).unwrap();
         let ts_c_chars = CString::new(ts).unwrap();
@@ -97,6 +103,14 @@ impl NvDsEventMsgMeta {
         }
     }
 
+    pub fn obj_class_id(&self) -> i32 {
+        self.0.obj_class_id
+    }
+
+    pub fn sensor_id(&self) -> i32 {
+        self.0.sensor_id
+    }
+
     pub fn obj_class_label<'a>(&self) -> &'a str {
         unsafe {
             CStr::from_ptr::<'a>(self.0.obj_class_label)
@@ -110,11 +124,37 @@ impl NvDsEventMsgMeta {
     }
 }
 
+impl Clone for NvDsEventMsgMeta {
+    fn clone(&self) -> Self {
+        Self::new(
+            self.bbox().clone(),
+            self.0.obj_class_id,
+            &self.obj_class_label().to_owned(),
+            self.0.sensor_id,
+            self.0.frame_id,
+            self.0.confidence,
+            self.0.tracking_id,
+            &self.ts().to_owned(),
+        )
+    }
+}
+
+impl Drop for NvDsEventMsgMeta {
+    fn drop(&mut self) {
+        unsafe {
+            drop(CString::from_raw(self.0.obj_class_label));
+            drop(CString::from_raw(self.0.ts));
+        }
+    }
+}
+
 impl std::fmt::Debug for NvDsEventMsgMeta {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.debug_struct("NvDsEventMsgMeta")
             .field("bbox", &self.bbox())
+            .field("obj_class_id", &self.obj_class_id())
             .field("obj_class_label", &self.obj_class_label())
+            .field("sensor_id", &self.sensor_id())
             .field("frame_id", &self.0.frame_id)
             .field("ts", &self.ts())
             .finish()

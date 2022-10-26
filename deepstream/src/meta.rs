@@ -1,3 +1,4 @@
+use glib::ffi::gpointer;
 use libc::{c_char, c_void};
 use std::ffi::CStr;
 use std::marker::PhantomData;
@@ -112,7 +113,7 @@ impl NvDsFrameMeta {
         unsafe {
             let frame_ptr = self.as_mut_ptr();
             let user_meta_ptr = user_meta.as_mut_ptr();
-            ffi::nvds_add_user_meta_to_frame(frame_ptr, user_meta_ptr)
+            ffi::nvds_add_user_meta_to_frame(frame_ptr, user_meta_ptr);
         }
     }
 }
@@ -191,25 +192,28 @@ impl<T> NvDsUserMeta<T> {
     }
 }
 
-impl NvDsUserMeta<crate::meta_schema::NvDsEventMsgMeta> {
-    pub fn set_data(&mut self, data: crate::meta_schema::NvDsEventMsgMeta) {
-        self.0.user_meta_data = data.as_mut_ptr() as *mut c_void;
+unsafe extern "C" fn msg_copy_func(data: gpointer, user_data: gpointer) -> gpointer {
+    println!("--- copy event msg ---");
+
+    let user_meta = data as *mut ffi::NvDsUserMeta;
+    let src_meta = (*user_meta).user_meta_data as *const NvDsEventMsgMeta as *mut NvDsEventMsgMeta;
+    let dst_meta = std::mem::ManuallyDrop::new(src_meta.clone());
+    Box::into_raw(Box::new(dst_meta)) as gpointer
+}
+
+unsafe extern "C" fn msg_release_func(data: gpointer, user_data: gpointer) {
+    let user_meta = data as *mut ffi::NvDsUserMeta;
+    let src_meta = (*user_meta).user_meta_data as *mut NvDsEventMsgMeta;
+    src_meta.drop_in_place();
+}
+
+impl NvDsUserMeta<NvDsEventMsgMeta> {
+    pub fn set_data(&mut self, data: NvDsEventMsgMeta) {
+        let user_meta_data = std::mem::ManuallyDrop::new(data);
+        self.0.user_meta_data = Box::into_raw(Box::new(user_meta_data)) as gpointer;
         self.0.base_meta.meta_type = ffi::NVDS_EVENT_MSG_META;
-
-        /*
-        self.0.base_meta.copy_func = |data, user_data| {
-            let user_meta = data as *mut ffi::NvDsUserMeta;
-            let src_meta = user_meta.user_meta_data as *mut NvDsEventMsgMeta;
-            let src_meta_bbox = src_meta.bbox();
-
-            unsafe {
-                let dst_meta = NvDsEventMsgMeta::new(
-                    crate::meta_schema::NvDsRect::new(
-                        src_meta_bbox.top(), left, width, height),
-                    obj_class_id, obj_class_label, sensor_id, frame_id, confidence, tracking_id, ts)
-            }
-        }
-        */
+        self.0.base_meta.copy_func = Some(msg_copy_func);
+        self.0.base_meta.release_func = Some(msg_release_func);
     }
 }
 

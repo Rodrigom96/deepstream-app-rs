@@ -7,22 +7,24 @@ use libc::{
 #[allow(unused_imports)]
 use glib_sys::{gboolean, gconstpointer, gpointer, GType};
 
-#[repr(C)]
-pub enum NvDsEventType {
-    Entry,
-    Exit,
-    Moving,
-    Stopped,
-    Empty,
-    Parked,
-    Reset,
-}
+pub type NvDsEventType = c_int;
+pub const NVDS_EVENT_ENTRY: NvDsEventType = 0;
+pub const NVDS_EVENT_EXIT: NvDsEventType = 1;
+pub const NVDS_EVENT_MOVING: NvDsEventType = 2;
+pub const NVDS_EVENT_STOPPED: NvDsEventType = 3;
+pub const NVDS_EVENT_EMPTY: NvDsEventType = 4;
+pub const NVDS_EVENT_PARKED: NvDsEventType = 5;
+pub const NVDS_EVENT_RESET: NvDsEventType = 6;
+pub const NVDS_EVENT_RESERVED: NvDsEventType = 0x100;
+pub const NVDS_EVENT_CUSTOM: NvDsEventType = 0x101;
+pub const NVDS_EVENT_FORCE32: NvDsEventType = 0x7FFFFFFF;
 
-#[repr(C)]
-pub enum NvDsPayloadType {
-    Deepstream,
-    DeepstreamMinimal,
-}
+pub type NvDsPayloadType = c_int;
+pub const NVDS_PAYLOAD_DEEPSTREAM: NvDsPayloadType = 0;
+pub const NVDS_PAYLOAD_DEEPSTREAM_MINIMAL: NvDsPayloadType = 1;
+pub const NVDS_PAYLOAD_RESERVED: NvDsPayloadType = 0x100;
+pub const NVDS_PAYLOAD_CUSTOM: NvDsPayloadType = 0x101;
+pub const NVDS_PAYLOAD_FORCE32: NvDsPayloadType = 0x7FFFFFFF;
 
 #[repr(C)]
 pub struct NvDsRect {
