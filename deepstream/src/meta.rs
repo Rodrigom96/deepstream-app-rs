@@ -76,7 +76,7 @@ impl<'a> Iterator for NvDsObjectMetaIter<'a> {
             Some(cur) => unsafe {
                 self.ptr = std::ptr::NonNull::new(cur.as_ref().next);
 
-                let mut item = &mut *(cur.as_ref().data as *mut NvDsObjectMeta);
+                let item = &mut *(cur.as_ref().data as *mut NvDsObjectMeta);
 
                 Some(item)
             },
@@ -151,7 +151,7 @@ impl<'a> Iterator for NvDsFrameMetaIter<'a> {
             Some(cur) => unsafe {
                 self.ptr = std::ptr::NonNull::new(cur.as_ref().next);
 
-                let mut item = &mut *(cur.as_ref().data as *mut NvDsFrameMeta);
+                let item = &mut *(cur.as_ref().data as *mut NvDsFrameMeta);
 
                 Some(item)
             },
@@ -192,7 +192,7 @@ impl<T> NvDsUserMeta<T> {
     }
 }
 
-unsafe extern "C" fn msg_copy_func(data: gpointer, user_data: gpointer) -> gpointer {
+unsafe extern "C" fn msg_copy_func(data: gpointer, _user_data: gpointer) -> gpointer {
     println!("--- copy event msg ---");
 
     let user_meta = data as *mut ffi::NvDsUserMeta;
@@ -201,7 +201,7 @@ unsafe extern "C" fn msg_copy_func(data: gpointer, user_data: gpointer) -> gpoin
     Box::into_raw(Box::new(dst_meta)) as gpointer
 }
 
-unsafe extern "C" fn msg_release_func(data: gpointer, user_data: gpointer) {
+unsafe extern "C" fn msg_release_func(data: gpointer, _user_data: gpointer) {
     let user_meta = data as *mut ffi::NvDsUserMeta;
     let src_meta = (*user_meta).user_meta_data as *mut NvDsEventMsgMeta;
     src_meta.drop_in_place();

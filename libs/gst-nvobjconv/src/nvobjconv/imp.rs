@@ -1,20 +1,12 @@
+use chrono::prelude::{DateTime, Utc};
 use gst::glib;
 use gst::subclass::prelude::ObjectSubclass;
 use gst_base::subclass::prelude::{BaseTransformImpl, ElementImpl, ObjectImpl};
-//use gst::{gst_debug, gst_error, gst_info};
 
 use once_cell::sync::Lazy;
 
 use deepstream::gst_meta::{DsMeta, GstNvDsMetaType};
 use deepstream::meta_schema::{NvDsEventMsgMeta, NvDsRect};
-
-static CAT: Lazy<gst::DebugCategory> = Lazy::new(|| {
-    gst::DebugCategory::new(
-        "nvobjconv",
-        gst::DebugColorFlags::empty(),
-        Some("Transforms buffer objects to meta"),
-    )
-});
 
 #[derive(Default)]
 pub struct NVObjconv {}
@@ -83,11 +75,11 @@ impl BaseTransformImpl for NVObjconv {
     ) -> Result<gst::FlowSuccess, gst::FlowError> {
         for mut meta in buf.iter_meta_mut::<DsMeta>() {
             if let GstNvDsMetaType::BatchGstMeta = meta.meta_type() {
+                let ts = Utc::now().to_rfc3339();
+
                 let mut batch_meta = meta.batch_meta().unwrap();
                 for mut frame in batch_meta.iter_frame() {
                     for mut obj in frame.iter_objects() {
-                        println!("Obj: {:?}", obj);
-
                         let msg_meta = NvDsEventMsgMeta::new(
                             NvDsRect::new(
                                 obj.rect_params().top,
@@ -101,16 +93,12 @@ impl BaseTransformImpl for NVObjconv {
                             frame.frame_number(),
                             f64::from(obj.confidence()),
                             obj.object_id().try_into().unwrap(),
-                            "ts",
+                            &ts,
                         );
-
-                        println!("Msg Meta: {:?}", msg_meta);
 
                         let mut user_meta = batch_meta.acquire_user_meta::<NvDsEventMsgMeta>();
 
                         user_meta.set_data(msg_meta);
-
-                        println!("User Meta: {:?}", user_meta);
 
                         frame.add_user_meta(user_meta);
                     }

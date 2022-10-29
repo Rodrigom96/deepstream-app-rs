@@ -67,7 +67,7 @@ pub struct NvDsMetaPool {
 pub struct NvDsBaseMeta {
     pub batch_meta: *mut NvDsBatchMeta,
     pub meta_type: NvDsMetaType,
-    pub uContext: *mut c_void,
+    pub u_context: *mut c_void,
     pub copy_func: NvDsMetaCopyFunc,
     pub release_func: NvDsMetaReleaseFunc,
 }
@@ -105,7 +105,7 @@ pub struct NvDsFrameMeta {
     pub surface_type: c_uint,
     pub surface_index: c_uint,
     pub num_obj_meta: c_uint,
-    pub bInferDone: gboolean,
+    pub b_infer_done: gboolean,
     pub obj_meta_list: *mut NvDsObjectMetaList,
     pub display_meta_list: *mut NvDisplayMetaList,
     pub frame_user_meta_list: *mut NvDsUserMetaList,
