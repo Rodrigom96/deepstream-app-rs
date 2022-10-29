@@ -1,4 +1,7 @@
 pub mod events;
+pub mod gst_meta;
+pub mod meta;
+pub mod meta_schema;
 
 #[cfg(test)]
 mod tests {

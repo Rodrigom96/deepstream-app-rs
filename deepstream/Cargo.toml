@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libc = "0.2.0"
+glib = "0.14.0"
 gstreamer = { version = "0.17.2" }
 deepstream-sys = { path = "../deepstream-sys" }

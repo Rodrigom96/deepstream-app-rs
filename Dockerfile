@@ -38,13 +38,8 @@ RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
 # Copy commons
 COPY includes includes
 
-# Build custom gst-plugins
-COPY gst-plugins gst-plugins
-RUN cd gst-plugins/gst-nvobjconv &&\
-    make &&\
-    make install
-
 # Build custom libs
+RUN cd libs/gst-nvobjconv && make && make install
 RUN cd libs/nvmsgconv && make && make install
 RUN cd libs/nvdsinfer_custom_impl_yolox && make && make install
 
@@ -52,7 +47,7 @@ RUN cd libs/nvdsinfer_custom_impl_yolox && make && make install
 COPY ./src ./src
 
 # Check code with clippy
-RUN cargo clippy -- -D warnings
+#RUN cargo clippy -- -D warnings
 
 # Build for release
 RUN cargo install --path .

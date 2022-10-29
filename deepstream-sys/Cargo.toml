@@ -8,4 +8,5 @@ build = "build.rs"
 
 [dependencies]
 libc = "0.2.0"
+glib-sys = "0.14.0"
 gst-sys = { version = "0.17.2", package = "gstreamer-sys" }

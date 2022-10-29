@@ -5,8 +5,8 @@ use libc::{
 };
 use std::ffi::CString;
 
-mod nvdsmeta_custom_schema;
-use nvdsmeta_custom_schema::*;
+use deepstream_sys::nvdsmeta_schema::*;
+
 mod message;
 
 pub struct NvDsMsg2pCtx {}
