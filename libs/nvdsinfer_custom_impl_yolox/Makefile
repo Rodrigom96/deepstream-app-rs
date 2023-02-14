@@ -16,7 +16,7 @@
 
 #CUDA_VER?=
 CUDA_VER=11
-NVDS_VERSION:=6.1
+NVDS_VERSION:=6.2
 
 SRCFILES:= nvdsparsebbox_yolox.cpp 
 TARGET_LIB:= libnvdsinfer_custom_impl_yolox.so

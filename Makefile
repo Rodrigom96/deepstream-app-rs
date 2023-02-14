@@ -5,10 +5,10 @@ build:
 	docker build -t $(DOCKER_TAG) .
 
 run: build
-	docker-compose up app
+	docker compose up app
 
 test:
 	docker run -it --rm $(DOCKER_TAG) $(COMMAND_TEST)
 
 bash:
-	docker-compose run app bash
+	docker compose run app bash

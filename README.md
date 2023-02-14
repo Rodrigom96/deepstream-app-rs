@@ -1,7 +1,7 @@
 # deepstream-rs
 
 ## Requirements
-- CUDA >= 11.1
+- CUDA >= 11.8
 - [nvida-docker](https://github.com/NVIDIA/nvidia-docker)
 
 ## Usage
