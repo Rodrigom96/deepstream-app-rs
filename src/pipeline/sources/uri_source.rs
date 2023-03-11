@@ -15,12 +15,13 @@ impl URISource {
     pub fn new(uri: String) -> Result<Self, Error> {
         let bin = gst::Bin::new(None);
 
-        let urisrc = gst::ElementFactory::make("uridecodebin", None)
-            .map_err(|_| MissingElement("uridecodebin"))?;
+        let urisrc = gst::ElementFactory::make("nvurisrcbin", None)
+            .map_err(|_| MissingElement("nvurisrcbin"))?;
         let queue =
             gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
-        // Config urisourcebin
+        // Config nvurisrcbin
         urisrc.set_property("uri", &uri)?;
+        urisrc.set_property("rtsp-reconnect-interval", 10_u32)?;
 
         // Add elements to queue
         bin.add_many(&[&urisrc, &queue])?;
