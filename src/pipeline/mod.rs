@@ -57,6 +57,7 @@ impl Pipeline {
     }
 
     pub fn add_source(&mut self, src: &dyn sources::Source, id: &u8) -> Result<(), Error> {
+        debug!("Adding source {} ...", id);
         if self.sources_bin_name.get(id).is_some() {
             return Err(anyhow!("Source {} alredy in pipelein", id));
         }
@@ -85,6 +86,7 @@ impl Pipeline {
     }
 
     pub fn remove_source(&mut self, id: &u8) -> Result<(), Error> {
+        debug!("Removing source {} ...", id);
         if let Some(bin_name) = self.sources_bin_name.remove(id) {
             // get source bin
             let bin = self.pipeline.by_name(&bin_name).unwrap();
@@ -102,6 +104,9 @@ impl Pipeline {
             self.streammux.release_request_pad(&sinkpad);
 
             self.pipeline.remove(&bin)?;
+
+            // Remove source sink
+            self.pipeline_sink.remove_source_sink(id)?;
 
             debug!("Source {} removed with name {}", id, bin_name);
         } else {

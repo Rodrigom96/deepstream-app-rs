@@ -82,4 +82,12 @@ impl PipelineSink {
 
         Ok(())
     }
+
+    pub fn remove_source_sink(&self, id: &u8) -> Result<(), Error> {
+        if let Some(rtsp_demux) = &self.rtsp_demux {
+            rtsp_demux.remove_sink(id)?;
+        }
+
+        Ok(())
+    }
 }

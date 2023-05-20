@@ -138,12 +138,32 @@ impl RTSPDemuxSink {
         )?;
         self.bin.add(&sink)?;
 
-        let srcpad = self
-            .streamdemux
-            .request_pad_simple(&src_name[..])
-            .expect("Cant get streamdemux srcpad");
+        // get streamdemux src pad or create if not exists
+        let srcpad = if let Some(srcpad) = self.streamdemux.static_pad(&src_name) {
+            srcpad
+        } else {
+            self.streamdemux
+                .request_pad_simple(&src_name)
+                .expect("Cant get streamdemux srcpad")
+        };
         let sinkpad = sink.static_pad("sink").expect("Catn get rtsp bin sinkpad");
         srcpad.link(&sinkpad)?;
+
+        // start sink if pipeline is playin
+        sink.sync_state_with_parent()?;
+
+        Ok(())
+    }
+
+    pub fn remove_sink(&self, id: &u8) -> Result<(), Error> {
+        // get rtsp sink bin
+        let sink = self.bin.by_name(&format!("rtspbin_{}", id)).unwrap();
+
+        // stop sink
+        sink.set_state(gst::State::Null)?;
+
+        // remove sink
+        self.bin.remove(&sink)?;
 
         Ok(())
     }
