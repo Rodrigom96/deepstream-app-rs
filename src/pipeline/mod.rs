@@ -12,6 +12,7 @@ use common::MissingElement;
 
 pub mod config;
 mod filters;
+mod metrics;
 mod sinks;
 pub mod sources;
 
@@ -20,6 +21,7 @@ pub struct Pipeline {
     streammux: gst::Element,
     pipeline_sink: sinks::PipelineSink,
     sources_bin_name: HashMap<u8, String>,
+    fps_metrics: metrics::FPSMetrics,
 }
 
 impl Pipeline {
@@ -48,11 +50,14 @@ impl Pipeline {
             .link(&pipeline_sink.bin)
             .expect("Failed to link filters_bin with sink");
 
+        let fps_metrics = metrics::FPSMetrics::new(&filters_bin)?;
+
         Ok(Pipeline {
             pipeline,
             streammux,
             pipeline_sink,
             sources_bin_name: HashMap::new(),
+            fps_metrics,
         })
     }
 
@@ -165,6 +170,15 @@ impl Pipeline {
     pub fn is_running(&self) -> bool {
         let (_, pipeline_state, _) = self.pipeline.state(None);
         pipeline_state != gst::State::Null
+    }
+
+    pub fn sources_fps(&self) -> HashMap<u8, Option<f64>> {
+        let mut sources_fps = HashMap::new();
+        for source_id in self.sources_bin_name.keys() {
+            sources_fps.insert(*source_id, self.fps_metrics.fps(source_id));
+        }
+
+        sources_fps
     }
 }
 

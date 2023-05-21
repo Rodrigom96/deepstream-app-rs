@@ -136,6 +136,10 @@ impl PipelineManager {
                 break;
             }
 
+            // log fps
+            let fps = self.pipeline.sources_fps();
+            log::debug!("FPS: {:?}", fps);
+
             // sync with config
             self.update_config()?;
         }
