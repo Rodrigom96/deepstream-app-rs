@@ -142,9 +142,16 @@ impl RTSPDemuxSink {
         let srcpad = if let Some(srcpad) = self.streamdemux.static_pad(&src_name) {
             srcpad
         } else {
-            self.streamdemux
+            self.streamdemux.set_state(gst::State::Null)?;
+
+            let srcpad = self
+                .streamdemux
                 .request_pad_simple(&src_name)
-                .expect("Cant get streamdemux srcpad")
+                .expect("Cant get streamdemux srcpad");
+
+            self.streamdemux.sync_state_with_parent();
+
+            srcpad
         };
         let sinkpad = sink.static_pad("sink").expect("Catn get rtsp bin sinkpad");
         srcpad.link(&sinkpad)?;
