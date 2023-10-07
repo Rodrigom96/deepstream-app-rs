@@ -22,7 +22,8 @@ pub type NvDsLabelInfoList = GList;
 pub type NvDsMetaList = GList;
 pub type NvDsElementMeta = c_void;
 
-pub type NvDsMetaCopyFunc = Option<unsafe extern "C" fn(data: gpointer, user_data: gpointer) -> gpointer>;
+pub type NvDsMetaCopyFunc =
+    Option<unsafe extern "C" fn(data: gpointer, user_data: gpointer) -> gpointer>;
 pub type NvDsMetaReleaseFunc = Option<unsafe extern "C" fn(data: gpointer, user_data: gpointer)>;
 
 pub type NvDsMetaType = c_int;
@@ -44,6 +45,8 @@ pub const NVDS_RESERVED_META: NvDsMetaType = 4095;
 pub const NVDS_GST_CUSTOM_META: NvDsMetaType = 4096;
 pub const NVDS_START_USER_META: NvDsMetaType = NVDS_GST_CUSTOM_META + 4096 + 1;
 pub const NVDS_FORCE32_META: NvDsMetaType = 0x7FFFFFFF;
+
+pub const UNTRACKED_OBJECT_ID: c_ulong = 0xFFFFFFFFFFFFFFFF;
 
 #[repr(C)]
 pub struct NvDsComp_BboxInfo {

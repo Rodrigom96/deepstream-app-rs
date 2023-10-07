@@ -80,6 +80,10 @@ impl BaseTransformImpl for NVObjconv {
                 let mut batch_meta = meta.batch_meta().unwrap();
                 for mut frame in batch_meta.iter_frame() {
                     for mut obj in frame.iter_objects() {
+                        let tracking_id = match obj.object_id() {
+                            Some(id) => id.try_into().expect(&format!("Invalid object id: {}", id)),
+                            None => -1,
+                        };
                         let msg_meta = NvDsEventMsgMeta::new(
                             NvDsRect::new(
                                 obj.rect_params().top,
@@ -92,7 +96,7 @@ impl BaseTransformImpl for NVObjconv {
                             frame.source_id().try_into().unwrap(),
                             frame.frame_number(),
                             f64::from(obj.confidence()),
-                            obj.object_id().try_into().unwrap(),
+                            tracking_id,
                             &ts,
                         );
 

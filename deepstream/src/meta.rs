@@ -28,8 +28,12 @@ impl NvDsObjectMeta {
         }
     }
 
-    pub fn object_id(&self) -> u64 {
-        self.0.object_id
+    pub fn object_id(&self) -> Option<u64> {
+        if self.0.object_id == ffi::UNTRACKED_OBJECT_ID {
+            return None;
+        } else {
+            return Some(self.0.object_id);
+        }
     }
 
     pub fn rect_params(&self) -> &NvOSD_RectParams {
