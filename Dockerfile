@@ -31,7 +31,8 @@ COPY dummy.rs .
 COPY Cargo.toml .
 
 # Build only the dependencies to cache them
-RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
     cargo build --release &&\
     sed -i 's#dummy.rs#src/main.rs#' Cargo.toml
 
@@ -39,9 +40,12 @@ RUN sed -i 's#src/main.rs#dummy.rs#' Cargo.toml &&\
 COPY includes includes
 
 # Build custom libs
-RUN cd libs/gst-nvobjconv && make && make install
-RUN cd libs/nvmsgconv && make && make install
-RUN cd libs/nvdsinfer_custom_impl_yolox && make && make install
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cd libs/gst-nvobjconv && make && make install
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cd libs/nvmsgconv && make && make install
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cd libs/nvdsinfer_custom_impl_yolox && make && make install
 
 # Copy source code
 COPY ./src ./src
@@ -50,7 +54,8 @@ COPY ./src ./src
 #RUN cargo clippy -- -D warnings
 
 # Build for release
-RUN cargo install --path .
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo install --path .
 
 FROM nvcr.io/nvidia/deepstream:6.2-base
 
