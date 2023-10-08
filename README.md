@@ -20,6 +20,8 @@ Run docker container
 ```
 make run
 ```
+### Config
+See [config/pipeline_config.yml](config/pipeline_config.yml)
 
 ## References
 - https://gitlab.freedesktop.org/gstreamer/gstreamer-rs/-/tree/master/examples
