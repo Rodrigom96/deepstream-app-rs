@@ -7,8 +7,16 @@ use std::hash::{Hash, Hasher};
 #[serde(tag = "type")]
 pub enum SourceKind {
     Test,
-    Uri { uri: String },
-    Rtsp { uri: String },
+    Uri {
+        uri: String,
+        username: Option<String>,
+        password: Option<String>,
+    },
+    Rtsp {
+        uri: String,
+        username: Option<String>,
+        password: Option<String>,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, Hash)]

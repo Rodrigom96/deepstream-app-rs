@@ -190,7 +190,11 @@ pub struct RTSPSource {
 }
 
 impl RTSPSource {
-    pub fn new(uri: String) -> Result<Self, Error> {
+    pub fn new(
+        uri: &str,
+        username: Option<&str>,
+        password: Option<&str>,
+    ) -> Result<Self, Error> {
         let bin = gst::Bin::new(None);
 
         let rtspsrc =
@@ -207,6 +211,14 @@ impl RTSPSource {
         rtspsrc.set_property("location", &uri)?;
         rtspsrc.set_property("latency", 100_u32)?;
         rtspsrc.set_property("drop-on-latency", true)?;
+
+        // Config rtsp auth
+        if let Some(username) = username {
+            rtspsrc.set_property("user-id", &username)?;
+        }
+        if let Some(password) = password {
+            rtspsrc.set_property("user-pw", &password)?;
+        }
 
         // Add elements to bin
         bin.add_many(&[&rtspsrc, &decodebin, &queue])?;

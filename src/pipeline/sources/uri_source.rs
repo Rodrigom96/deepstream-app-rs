@@ -12,7 +12,7 @@ pub struct URISource {
 }
 
 impl URISource {
-    pub fn new(uri: String) -> Result<Self, Error> {
+    pub fn new(uri: &str, username: Option<&str>, password: Option<&str>) -> Result<Self, Error> {
         let bin = gst::Bin::new(None);
 
         let urisrc = gst::ElementFactory::make("nvurisrcbin", None)
@@ -20,7 +20,7 @@ impl URISource {
         let queue =
             gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
         // Config nvurisrcbin
-        urisrc.set_property("uri", &uri)?;
+        urisrc.set_property("uri", uri)?;
         urisrc.set_property("rtsp-reconnect-interval", 10_u32)?;
 
         // Add elements to queue
@@ -28,6 +28,25 @@ impl URISource {
 
         // Add bin sink ghostpad
         common::add_bin_ghost_pad(&bin, &queue, "src")?;
+
+        let username = username.map(|s| s.to_owned());
+        let password = password.map(|s| s.to_owned());
+        urisrc
+            .downcast_ref::<gst::Bin>()
+            .unwrap()
+            .connect_child_added(move |_, element, _| {
+                let element = element.downcast_ref::<gst::Element>().unwrap();
+                let element_class = element.factory().unwrap().name();
+                if element_class == "rtspsrc" {
+                    // Config rtsp auth
+                    if let Some(username) = &username {
+                        element.set_property("user-id", username).unwrap();
+                    }
+                    if let Some(password) = &password {
+                        element.set_property("user-pw", password).unwrap();
+                    }
+                }
+            });
 
         // Connect the pad-added signal
         let queue_weak = queue.downgrade();

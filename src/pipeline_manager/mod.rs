@@ -60,16 +60,32 @@ impl PipelineManager {
                     .add_source(&src, source_id)
                     .expect("Cant add source");
             }
-            pipeline::config::SourceKind::Uri { uri } => {
-                let src = pipeline::sources::URISource::new(uri.to_string())
-                    .expect("Cant cerate uri source");
+            pipeline::config::SourceKind::Uri {
+                uri,
+                username,
+                password,
+            } => {
+                let src = pipeline::sources::URISource::new(
+                    uri,
+                    username.as_deref(),
+                    password.as_deref(),
+                )
+                .expect("Cant cerate uri source");
                 self.pipeline
                     .add_source(&src, source_id)
                     .expect("Cant add source");
             }
-            pipeline::config::SourceKind::Rtsp { uri } => {
-                let src = pipeline::sources::RTSPSource::new(uri.to_string())
-                    .expect("Cant create rtsp source");
+            pipeline::config::SourceKind::Rtsp {
+                uri,
+                username,
+                password,
+            } => {
+                let src = pipeline::sources::RTSPSource::new(
+                    &uri,
+                    username.as_deref(),
+                    password.as_deref(),
+                )
+                .expect("Cant create rtsp source");
                 self.pipeline
                     .add_source(&src, source_id)
                     .expect("Cant add source");
