@@ -52,23 +52,11 @@ impl PipelineSink {
             false => None,
         };
 
-        // Add filter to proccess images for display
-        let display_queue =
-            gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
-        let tiler = gst::ElementFactory::make("nvmultistreamtiler", None)
-            .map_err(|_| MissingElement("nvmultistreamtiler"))?;
-        let tee_display =
-            gst::ElementFactory::make("tee", None).map_err(|_| MissingElement("tee"))?;
-        bin.add_many(&[&display_queue, &tiler, &tee_display])?;
-        common::link_element_to_tee_src_pad(&tee, &display_queue)?;
-        display_queue.link(&tiler)?;
-        tiler.link(&tee_display)?;
-
         // Add display sinks
         if config.display {
             let render_sink = render_sink::create_bin(Some("render_sink"))?;
             bin.add(&render_sink)?;
-            common::link_element_to_tee_src_pad(&tee_display, &render_sink)?;
+            common::link_element_to_tee_src_pad(&tee, &render_sink)?;
         }
 
         common::add_bin_ghost_pad(&bin, &queue, "sink")?;
