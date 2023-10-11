@@ -6,6 +6,8 @@ use std::time::{Duration, Instant};
 
 use ds::gst_meta::{DsMeta, GstNvDsMetaType};
 
+use crate::common::SourceId;
+
 struct Metric {
     last_instant: Option<Instant>,
     fps_vec: Vec<f64>,
@@ -61,7 +63,7 @@ impl Metric {
 }
 
 pub struct FPSMetrics {
-    metric_by_source: Arc<Mutex<HashMap<u8, Metric>>>,
+    metric_by_source: Arc<Mutex<HashMap<SourceId, Metric>>>,
 }
 
 impl FPSMetrics {
@@ -84,8 +86,9 @@ impl FPSMetrics {
                         for mut frame in batch_meta.iter_frame() {
                             // get frame metric
                             let source_id = frame.source_id();
-                            let mut metric =
-                                metrics.entry(source_id as u8).or_insert(Metric::new());
+                            let mut metric = metrics
+                                .entry(source_id as SourceId)
+                                .or_insert(Metric::new());
 
                             // update metric
                             metric.update();
@@ -100,9 +103,8 @@ impl FPSMetrics {
         Ok(fps_metrics)
     }
 
-    pub fn fps(&self, source_id: &u8) -> Option<f64> {
-        let metric_by_source: std::sync::MutexGuard<HashMap<u8, Metric>> =
-            self.metric_by_source.lock().unwrap();
+    pub fn fps(&self, source_id: &SourceId) -> Option<f64> {
+        let metric_by_source = self.metric_by_source.lock().unwrap();
 
         if let Some(metric) = metric_by_source.get(source_id) {
             metric.fps()

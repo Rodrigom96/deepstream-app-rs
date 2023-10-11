@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+use crate::common::SourceId;
+
 #[derive(Debug, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "camelCase")]
 #[serde(tag = "type")]
@@ -21,7 +23,7 @@ pub enum SourceKind {
 
 #[derive(Debug, Serialize, Deserialize, Hash)]
 pub struct SourceConfig {
-    pub id: u8,
+    pub id: SourceId,
     pub kind: SourceKind,
 }
 

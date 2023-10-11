@@ -1,3 +1,4 @@
+mod common;
 mod logging;
 mod pipeline;
 mod pipeline_manager;

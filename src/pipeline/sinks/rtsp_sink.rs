@@ -5,6 +5,8 @@ use gst_rtsp_server::prelude::*;
 use log::info;
 use state::LocalStorage;
 
+use crate::common::SourceId;
+
 use super::super::common;
 use common::MissingElement;
 
@@ -128,7 +130,7 @@ impl RTSPDemuxSink {
         Ok(RTSPDemuxSink { bin, streamdemux })
     }
 
-    pub fn add_sink(&self, id: &u8) -> Result<(), Error> {
+    pub fn add_sink(&self, id: &SourceId) -> Result<(), Error> {
         let src_name = format!("src_{}", id);
 
         let sink = create_bin(
@@ -162,7 +164,7 @@ impl RTSPDemuxSink {
         Ok(())
     }
 
-    pub fn remove_sink(&self, id: &u8) -> Result<(), Error> {
+    pub fn remove_sink(&self, id: &SourceId) -> Result<(), Error> {
         // get rtsp sink bin
         let sink = self.bin.by_name(&format!("rtspbin_{}", id)).unwrap();
 

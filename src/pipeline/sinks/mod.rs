@@ -1,6 +1,8 @@
 use anyhow::Error;
 use gst::prelude::*;
 
+use crate::common::SourceId;
+
 use super::common;
 use super::config::SinksConfig;
 use common::MissingElement;
@@ -47,9 +49,8 @@ impl PipelineSink {
                 common::link_element_to_tee_src_pad(&tee, &rtsp_demux.bin)?;
                 Some(rtsp_demux)
             }
-            false => None
+            false => None,
         };
-        
 
         // Add filter to proccess images for display
         let display_queue =
@@ -75,7 +76,7 @@ impl PipelineSink {
         Ok(PipelineSink { bin, rtsp_demux })
     }
 
-    pub fn add_source_sink(&self, id: &u8) -> Result<(), Error> {
+    pub fn add_source_sink(&self, id: &SourceId) -> Result<(), Error> {
         if let Some(rtsp_demux) = &self.rtsp_demux {
             rtsp_demux.add_sink(id)?;
         }
@@ -83,7 +84,7 @@ impl PipelineSink {
         Ok(())
     }
 
-    pub fn remove_source_sink(&self, id: &u8) -> Result<(), Error> {
+    pub fn remove_source_sink(&self, id: &SourceId) -> Result<(), Error> {
         if let Some(rtsp_demux) = &self.rtsp_demux {
             rtsp_demux.remove_sink(id)?;
         }

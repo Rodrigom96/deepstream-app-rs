@@ -1,3 +1,5 @@
+use crate::common::SourceId;
+
 use super::pipeline;
 use super::pipeline::config::{PipelineConfig, SourceConfig};
 use super::pipeline::Pipeline;
@@ -10,7 +12,7 @@ use std::{thread, time};
 pub struct PipelineManager {
     pipeline: Pipeline,
     config_filename: String,
-    sources_config_hash: HashMap<u8, u64>,
+    sources_config_hash: HashMap<SourceId, u64>,
 }
 
 impl PipelineManager {
@@ -98,7 +100,7 @@ impl PipelineManager {
         Ok(())
     }
 
-    pub fn remove_source(&mut self, id: &u8) -> Result<(), Error> {
+    pub fn remove_source(&mut self, id: &SourceId) -> Result<(), Error> {
         if self.sources_config_hash.remove(id).is_some() {
             self.pipeline.remove_source(id)?;
         }

@@ -7,6 +7,8 @@ use std::thread;
 
 use log::{debug, error};
 
+use crate::common::SourceId;
+
 mod common;
 use common::MissingElement;
 
@@ -20,7 +22,7 @@ pub struct Pipeline {
     pipeline: gst::Pipeline,
     streammux: gst::Element,
     pipeline_sink: sinks::PipelineSink,
-    sources_bin_name: HashMap<u8, String>,
+    sources_bin_name: HashMap<SourceId, String>,
     fps_metrics: metrics::FPSMetrics,
 }
 
@@ -61,7 +63,7 @@ impl Pipeline {
         })
     }
 
-    pub fn add_source(&mut self, src: &dyn sources::Source, id: &u8) -> Result<(), Error> {
+    pub fn add_source(&mut self, src: &dyn sources::Source, id: &SourceId) -> Result<(), Error> {
         debug!("Adding source {} ...", id);
         if self.sources_bin_name.get(id).is_some() {
             return Err(anyhow!("Source {} alredy in pipelein", id));
@@ -90,7 +92,7 @@ impl Pipeline {
         Ok(())
     }
 
-    pub fn remove_source(&mut self, id: &u8) -> Result<(), Error> {
+    pub fn remove_source(&mut self, id: &SourceId) -> Result<(), Error> {
         debug!("Removing source {} ...", id);
         if let Some(bin_name) = self.sources_bin_name.remove(id) {
             // get source bin
@@ -172,7 +174,7 @@ impl Pipeline {
         pipeline_state != gst::State::Null
     }
 
-    pub fn sources_fps(&self) -> HashMap<u8, Option<f64>> {
+    pub fn sources_fps(&self) -> HashMap<SourceId, Option<f64>> {
         let mut sources_fps = HashMap::new();
         for source_id in self.sources_bin_name.keys() {
             sources_fps.insert(*source_id, self.fps_metrics.fps(source_id));
