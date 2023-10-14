@@ -28,6 +28,14 @@ pub struct SourceConfig {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct StreamMuxConfig {
+    pub batch_size: u32,
+    pub enable_padding: bool,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum FilterConfig {
     NvInfer {
         config_path: String,
@@ -55,6 +63,7 @@ pub struct SinksConfig {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PipelineConfig {
     pub sources: Vec<SourceConfig>,
+    pub streammux: StreamMuxConfig,
     pub filters: Vec<FilterConfig>,
     pub sinks: SinksConfig,
 }

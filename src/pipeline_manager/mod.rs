@@ -22,7 +22,11 @@ impl PipelineManager {
             Err(e) => panic!("Error load pipelin config file, {}", e),
         };
 
-        let pipeline = match Pipeline::new(pipeline_config.filters, pipeline_config.sinks) {
+        let pipeline = match Pipeline::new(
+            pipeline_config.streammux,
+            pipeline_config.filters,
+            pipeline_config.sinks,
+        ) {
             Ok(r) => r,
             Err(e) => {
                 panic!("Error! {}", e);

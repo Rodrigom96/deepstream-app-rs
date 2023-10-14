@@ -28,6 +28,7 @@ pub struct Pipeline {
 
 impl Pipeline {
     pub fn new(
+        streammux_config: config::StreamMuxConfig,
         filters_config: Vec<config::FilterConfig>,
         sinks_config: config::SinksConfig,
     ) -> Result<Self, Error> {
@@ -36,7 +37,7 @@ impl Pipeline {
         let pipeline = gst::Pipeline::new(None);
 
         // create elementes
-        let streammux = create_streamux().expect("Cant create steamux");
+        let streammux = create_streamux(&streammux_config).expect("Cant create steamux");
         let filters_bin = filters::create_bin(filters_config)?;
         let pipeline_sink = sinks::PipelineSink::new(sinks_config)?;
         // add elements
@@ -185,16 +186,16 @@ impl Pipeline {
 }
 
 /// Create nvstreammux element and config it.
-fn create_streamux() -> Result<gst::Element, Error> {
+fn create_streamux(streammux_config: &config::StreamMuxConfig) -> Result<gst::Element, Error> {
     let streammux = gst::ElementFactory::make("nvstreammux", None)
         .map_err(|_| MissingElement("nvstreammux"))?;
 
     // Set propertys
-    streammux.set_property("batch-size", 1_u32)?;
-    streammux.set_property("enable-padding", true)?;
+    streammux.set_property("batch-size", streammux_config.batch_size)?;
+    streammux.set_property("enable-padding", streammux_config.enable_padding)?;
     streammux.set_property("live-source", true)?;
-    streammux.set_property("width", 1280_u32)?;
-    streammux.set_property("height", 720_u32)?;
+    streammux.set_property("width", streammux_config.width)?;
+    streammux.set_property("height", streammux_config.height)?;
 
     Ok(streammux)
 }

@@ -4,6 +4,12 @@ sources:
       type: "uri"
       uri: "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4"
 
+streammux:
+  batch_size: 1
+  enable_padding: true
+  width: 1280
+  height: 720
+
 filters:
   - NvInfer:
       config_path: "config/filters/pgie_config.txt"
