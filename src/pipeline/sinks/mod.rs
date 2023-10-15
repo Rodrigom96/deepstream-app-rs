@@ -18,8 +18,6 @@ pub struct PipelineSink {
 
 impl PipelineSink {
     pub fn new(config: SinksConfig) -> Result<Self, Error> {
-        rtsp_sink::init(8554);
-
         let bin = gst::Bin::new(Some("sink_bin"));
 
         let queue =
@@ -44,6 +42,7 @@ impl PipelineSink {
         // Add rtsp demuxer
         let rtsp_demux: Option<rtsp_sink::RTSPDemuxSink> = match config.rtsp {
             true => {
+                rtsp_sink::init(8554);
                 let rtsp_demux = rtsp_sink::RTSPDemuxSink::new(Some("rtsp_demux"))?;
                 bin.add(&rtsp_demux.bin)?;
                 common::link_element_to_tee_src_pad(&tee, &rtsp_demux.bin)?;
