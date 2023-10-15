@@ -1,16 +1,26 @@
-use super::common::add_bin_ghost_pad;
-use super::config::FilterConfig;
 use anyhow::Error;
 use gst::prelude::*;
+
+use super::common::{add_bin_ghost_pad, MissingElement};
+use super::config::FilterConfig;
 
 mod nvinfer;
 mod tracker;
 
 pub fn create_bin(filters_config: Vec<FilterConfig>) -> Result<gst::Bin, Error> {
     let num_filters = filters_config.len();
-    assert!(num_filters > 0);
 
     let bin = gst::Bin::new(Some("filter_bin"));
+
+    if num_filters == 0 {
+        let queue =
+            gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
+        bin.add(&queue)?;
+        add_bin_ghost_pad(&bin, &queue, "sink")?;
+        add_bin_ghost_pad(&bin, &queue, "src")?;
+
+        return Ok(bin);
+    }
 
     let mut last_element: Option<gst::Element> = None;
     for (i, config) in filters_config.iter().enumerate() {
