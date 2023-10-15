@@ -4,6 +4,7 @@ use gst::prelude::*;
 use gst_rtsp_server::prelude::*;
 use log::info;
 use state::LocalStorage;
+use std::net::UdpSocket;
 
 use crate::common::SourceId;
 
@@ -32,7 +33,7 @@ pub fn init(rtsp_port: u32) {
     }
 }
 
-pub fn create_bin(name: Option<&str>, rtsp_path: &str, udp_port: u32) -> Result<gst::Bin, Error> {
+pub fn create_bin(name: Option<&str>, rtsp_path: &str) -> Result<gst::Bin, Error> {
     let bin = gst::Bin::new(name);
 
     let queue = gst::ElementFactory::make("queue", None).map_err(|_| MissingElement("queue"))?;
@@ -57,8 +58,9 @@ pub fn create_bin(name: Option<&str>, rtsp_path: &str, udp_port: u32) -> Result<
     let encoder = gst::ElementFactory::make("nvv4l2h264enc", None)
         .map_err(|_| MissingElement("nvv4l2h264enc"))?;
 
+    let udp_port = UdpSocket::bind("127.0.0.1:0")?.local_addr()?.port();
     let sink = gst::ElementFactory::make("udpsink", None).map_err(|_| MissingElement("udpsink"))?;
-    sink.set_property("host", "224.224.255.255")?;
+    sink.set_property("host", "127.0.0.1")?;
     sink.set_property("port", udp_port as i32)?;
     sink.set_property("async", false)?;
     sink.set_property("sync", false)?;
@@ -86,7 +88,11 @@ pub fn create_bin(name: Option<&str>, rtsp_path: &str, udp_port: u32) -> Result<
     Ok(bin)
 }
 
-fn start_rtsp_streaming(rtsp_path: &str, udpsink_port: u32, encoder: EncoderType) {
+fn get_rtsp_path(id: &SourceId) -> String {
+    format!("cam/{}", id)
+}
+
+fn start_rtsp_streaming(rtsp_path: &str, udpsink_port: u16, encoder: EncoderType) {
     let encoder_name = match encoder {
         EncoderType::H264 => "H264",
     };
@@ -106,6 +112,19 @@ fn start_rtsp_streaming(rtsp_path: &str, udpsink_port: u32, encoder: EncoderType
         mounts.add_factory(&format!("/{}", rtsp_path), &factory);
         info!(
             "Stream ready at rtsp://127.0.0.1:{}/{}",
+            server.bound_port(),
+            rtsp_path
+        );
+    }
+}
+
+fn stop_rtsp_server(rtsp_path: &str) {
+    unsafe {
+        let server = SERVER.get();
+        let mounts = server.mount_points().ok_or(NoMountPoints).unwrap();
+        mounts.remove_factory(&format!("/{}", rtsp_path));
+        info!(
+            "Stream closed at rtsp://127.0.0.1:{}/{}",
             server.bound_port(),
             rtsp_path
         );
@@ -133,11 +152,7 @@ impl RTSPDemuxSink {
     pub fn add_sink(&self, id: &SourceId) -> Result<(), Error> {
         let src_name = format!("src_{}", id);
 
-        let sink = create_bin(
-            Some(&format!("rtspbin_{}", id)),
-            &format!("cam/{}", id),
-            5401 + (*id as u32),
-        )?;
+        let sink = create_bin(Some(&format!("rtspbin_{}", id)), &get_rtsp_path(id))?;
         self.bin.add(&sink)?;
 
         // get streamdemux src pad or create if not exists
@@ -173,6 +188,9 @@ impl RTSPDemuxSink {
 
         // remove sink
         self.bin.remove(&sink)?;
+
+        // stop rtsp server
+        stop_rtsp_server(&get_rtsp_path(id));
 
         Ok(())
     }
