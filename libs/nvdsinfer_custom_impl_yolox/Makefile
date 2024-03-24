@@ -14,26 +14,19 @@
 # limitations under the License.
 #
 
-#CUDA_VER?=
-CUDA_VER=11
-NVDS_VERSION:=6.2
-
 SRCFILES:= nvdsparsebbox_yolox.cpp 
 TARGET_LIB:= libnvdsinfer_custom_impl_yolox.so
-DEEPSTREAM_PATH:=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)
+DEEPSTREAM_PATH:=/opt/nvidia/deepstream/deepstream
 LIB_INSTALL_DIR?=${DEEPSTREAM_PATH}/lib/
 
-ifeq ($(CUDA_VER),)
-  $(error "CUDA_VER is not set")
-endif
 CC:= g++
-NVCC:=/usr/local/cuda-$(CUDA_VER)/bin/nvcc
+NVCC:=/usr/local/cuda/bin/nvcc
 
 CFLAGS:= -Wall -std=c++11 -shared -fPIC -Wno-error=deprecated-declarations
-CFLAGS+= -I$(DEEPSTREAM_PATH)/sources/includes -I/usr/local/cuda-$(CUDA_VER)/include -I/usr/lib/gcc/x86_64-linux-gnu/7/include/ 
+CFLAGS+= -I$(DEEPSTREAM_PATH)/sources/includes -I/usr/local/cuda/include -I/usr/lib/gcc/x86_64-linux-gnu/7/include/ 
 CXXFLAGS:= -fopenmp
 
-LIBS:= -lnvinfer_plugin -lnvinfer -lnvparsers -L/usr/local/cuda-$(CUDA_VER)/lib64 -lcudart -lcublas -lstdc++fs
+LIBS:= -lnvinfer_plugin -lnvinfer -lnvparsers -L/usr/local/cuda/lib64 -lcudart -lcublas -lstdc++fs
 LFLAGS:= -shared -Wl,--start-group $(LIBS) -Wl,--end-group -fopenmp
 
 INCS:= $(wildcard *.h)

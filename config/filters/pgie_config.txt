@@ -22,7 +22,7 @@ network-type=0
 cluster-mode=4
 maintain-aspect-ratio=0
 parse-bbox-func-name=NvDsInferParseCustomYolox
-custom-lib-path=/opt/nvidia/deepstream/deepstream-6.2/lib/libnvdsinfer_custom_impl_yolox.so
+custom-lib-path=/opt/nvidia/deepstream/deepstream/lib/libnvdsinfer_custom_impl_yolox.so
 
 [class-attrs-all]
 pre-cluster-threshold=0.25

@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/deepstream:6.2-devel as build
+FROM nvcr.io/nvidia/deepstream:6.4-samples-multiarch as build
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     # rust
@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y \
     gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
     gstreamer1.0-libav libgstrtspserver-1.0-dev \
+    # build cuda (nvcc)
+    cuda-toolkit \
     # others
     wget \
     && apt remove -y gstreamer1.0-plugins-ugly
@@ -57,7 +59,7 @@ COPY ./src ./src
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo install --path .
 
-FROM nvcr.io/nvidia/deepstream:6.2-base
+FROM nvcr.io/nvidia/deepstream:6.4-samples-multiarch
 
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/nvidia/deepstream/deepstream/lib"
 
@@ -67,7 +69,7 @@ RUN /opt/nvidia/deepstream/deepstream/user_additional_install.sh \
     && apt remove -y gstreamer1.0-plugins-ugly
 
 COPY --from=build /usr/src/deepstream-rs/target/release/deepstream-rs .
-COPY --from=build /opt/nvidia/deepstream/deepstream-6.2/lib /opt/nvidia/deepstream/deepstream-6.2/lib
+COPY --from=build /opt/nvidia/deepstream/deepstream/lib /opt/nvidia/deepstream/deepstream/lib
 COPY --from=build /models /models
 
 # Copy configurations

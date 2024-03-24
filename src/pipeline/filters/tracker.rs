@@ -18,7 +18,7 @@ pub fn create_element(
         Some(ref path) => tracker.set_property("ll-lib-file", path)?,
         _ => tracker.set_property(
             "ll-lib-file",
-            "/opt/nvidia/deepstream/deepstream-6.2/lib/libnvds_nvmultiobjecttracker.so",
+            "/opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so",
         )?,
     };
     match config_path {
@@ -28,6 +28,5 @@ pub fn create_element(
             "config/filters/config_tracker_NvDCF_perf.yml",
         )?,
     };
-    tracker.set_property("enable-batch-process", true)?;
     Ok(tracker)
 }
